@@ -6,13 +6,20 @@ namespace modelchain
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Calculate Simple Day Angle!");
+            Console.WriteLine("Calculate Solar Position");
             string[] times = new string[4] {
                 "19900101T12:30:00", "19900102T12:30:00","19900103T12:30:00",
                 "19900104T12:30:00" };
-            float lat = (float)37.8132664;
-            float lon = (float)-122.2540443;
+            double lat = 37.8132664;
+            double lon = -122.2540443;
             pv.SolarPosition sp = new pv.SolarPosition(times, lat, lon);
+            int[] dayofyear = new int[4] { 1, 2, 3, 4 };
+            double[] eot = sp.EquationOfTimeSpencer71(dayofyear);
+            Console.WriteLine("Equation of Time, Spencer (1971)");
+            for (var i = 0; i < sp.NDays; i++)
+            {
+                Console.WriteLine($"{dayofyear[i]:n} --> {eot[i]:g}");
+            }
         }
     }
 }

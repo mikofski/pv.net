@@ -1,4 +1,5 @@
-SRC=pv
+PROJ=pv
+SRC=solarposition
 TEST=ModelChain
 BUILD=bin
 
@@ -9,7 +10,7 @@ win32:
 		md $(BUILD) \
 	)
 	csc -lib:$(BUILD) -out:$(BUILD)\$(SRC).dll \
-		-optimize -platform:x64 -target:library $(SRC)\$(SRC).cs
+		-optimize -platform:x64 -target:library $(PROJ)\$(SRC).cs
 
 	csc -lib:$(BUILD) -out:$(BUILD)\$(TEST).exe -reference:$(SRC).dll \
 		-optimize -platform:x64 -target:exe $(TEST)\$(TEST).cs 
