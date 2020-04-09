@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Linq;
 
-namespace pv.net
+namespace pv
 {
-    class SolarPosition
+    public class SolarPosition
     {
         public float Latitude, Longitude;
         public string[] Times;
