@@ -1,5 +1,9 @@
 ﻿using System;
-using System.Linq;
+/* don't use LINQ slower than loops
+  * https://habr.com/en/post/467689/
+  * http://www.nichesoftware.co.nz/2009/09/01/linq-vs-loop-performance.html
+ */
+// using System.Linq;
 
 namespace pv
 {
@@ -18,11 +22,11 @@ namespace pv
             this.Latitude = latitude;
             this.Longitude = longitude;
             DateTime[] theseDateTimes = TimesToDateTimes();
-            // int[] dayofyear = new int[NDays];
-            int[] dayofyear = theseDateTimes.Select(dt => dt.DayOfYear).ToArray();
+            int[] dayofyear = new int[NDays];
+            // int[] dayofyear = theseDateTimes.Select(dt => dt.DayOfYear).ToArray();
             for (var i = 0; i < NDays; i++ )
             {
-                // dayofyear[i] = theseDateTimes[i].DayOfYear;
+                dayofyear[i] = theseDateTimes[i].DayOfYear;
                 Console.WriteLine($"{theseDateTimes[i]:dd/MM/yyyy HH:mm:ss} --> {dayofyear[i]:n}");
             }
             DayAngleArray = CalcSimpleDayAngleArray(dayofyear);
@@ -30,11 +34,11 @@ namespace pv
 
         public float[] CalcSimpleDayAngleArray(int[] dayofyear, int offset = 1)
         {
-            // float[] dayAngle = new float[NDays];
-            float[] dayAngle = dayofyear.Select(doy => (float)(2.0 * Math.PI / 365.0) * (doy - offset)).ToArray();
+            float[] dayAngle = new float[NDays];
+            // float[] dayAngle = dayofyear.Select(doy => (float)(2.0 * Math.PI / 365.0) * (doy - offset)).ToArray();
             for (var i = 0; i < NDays; i++)
             {
-                // dayAngle[i] = (float) (2.0 * Math.PI / 365.0) * (dayofyear[i] - offset);
+                dayAngle[i] = (float) (2.0 * Math.PI / 365.0) * (dayofyear[i] - offset);
                 Console.WriteLine($"{dayofyear[i]:n} --> {dayAngle[i]:g}");
             }
             return dayAngle;
@@ -42,13 +46,13 @@ namespace pv
 
         public DateTime[] TimesToDateTimes()
         {
-            //DateTime[] theseDateTimes = new DateTime[NDays];
-            DateTime[] theseDateTimes = Times.Select(time => DateTime.ParseExact(time, "yyyyMMddTHH:mm:ss",
-                System.Globalization.CultureInfo.InvariantCulture)).ToArray();
+            DateTime[] theseDateTimes = new DateTime[NDays];
+            // DateTime[] theseDateTimes = Times.Select(time => DateTime.ParseExact(time, "yyyyMMddTHH:mm:ss",
+            //     System.Globalization.CultureInfo.InvariantCulture)).ToArray();
             for (var i = 0; i < NDays; i++)
             {
-                // theseDateTimes[i] = DateTime.ParseExact(Times[i], "yyyyMMddTHH:mm:ss",
-                //     System.Globalization.CultureInfo.InvariantCulture);
+                theseDateTimes[i] = DateTime.ParseExact(Times[i], "yyyyMMddTHH:mm:ss",
+                    System.Globalization.CultureInfo.InvariantCulture);
                 Console.WriteLine($"{Times[i]} --> {theseDateTimes[i]:g}");
             }
 
