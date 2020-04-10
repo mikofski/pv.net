@@ -4,11 +4,12 @@ namespace pv
 {
     public class SolarPosition
     {
-        public readonly double Latitude, Longitude;
         public readonly string[] Times;
+        public readonly double Latitude, Longitude;
         public readonly int NDays;
+        public readonly DateTime[] DateTimeArray;
+        public readonly int[] DayOfYearArray;
         public double[] ZenithArray, AzimuthArray;
-        public double[] DayAngleArray;
 
         /// <summary>
         /// Class that represents the solar positions for a given set of times
@@ -21,35 +22,17 @@ namespace pv
         public SolarPosition(string[] times, double latitude, double longitude)
         {
             Times = times;
-            NDays = times.Length;
             Latitude = latitude;
             Longitude = longitude;
-            DateTime[] dateTimeArray = TimesToDateTimes();
-            int[] dayofyear = new int[NDays];
+            NDays = times.Length;
+            DateTimeArray = TimesToDateTimes();
+            DayOfYearArray = new int[NDays];
             for (var i = 0; i < NDays; i++ )
             {
-                dayofyear[i] = dateTimeArray[i].DayOfYear;
-                Console.WriteLine($"{dateTimeArray[i]:dd/MM/yyyy HH:mm:ss} --> {dayofyear[i]:n}");
+                DayOfYearArray[i] = DateTimeArray[i].DayOfYear;
+                Console.WriteLine(
+                    $"{DateTimeArray[i]:dd/MM/yyyy HH:mm:ss} --> {DayOfYearArray[i]:n}");
             }
-            DayAngleArray = CalcSimpleDayAngleArray(dayofyear);
-        }
-
-        /// <summary>
-        /// Calculate the day angle for the Earth's orbit around the sun.
-        /// </summary>
-        /// <param name="dayofyear">the day of the year (integer)</param>
-        /// <param name="offset">an offset in days (integer, default: 1)</param>
-        /// <returns>day angles (Array of double)</returns>
-        public double[] CalcSimpleDayAngleArray(int[] dayofyear, int offset = 1)
-        {
-            double[] dayAngle = new double[NDays];
-            for (var i = 0; i < NDays; i++)
-            {
-                dayAngle[i] = (2.0 * Math.PI / 365.0) * (dayofyear[i] - offset);
-                Console.WriteLine($"{dayofyear[i]:n} --> {dayAngle[i]:g}");
-            }
-
-            return dayAngle;
         }
 
         /// <summary>
@@ -57,12 +40,13 @@ namespace pv
         /// seconds precision, to an array of DateTime objects.
         /// </summary>
         /// <returns>Array of DateTime objects</returns>
-        public DateTime[] TimesToDateTimes()
+        private DateTime[] TimesToDateTimes()
         {
-            DateTime[] dateTimeArray = new DateTime[NDays];
+            var dateTimeArray = new DateTime[NDays];
+            const string fmt = "yyyyMMddTHH:mm:ss";
             for (var i = 0; i < NDays; i++)
             {
-                dateTimeArray[i] = DateTime.ParseExact(Times[i], "yyyyMMddTHH:mm:ss",
+                dateTimeArray[i] = DateTime.ParseExact(Times[i], fmt,
                     System.Globalization.CultureInfo.InvariantCulture);
                 Console.WriteLine($"{Times[i]} --> {dateTimeArray[i]:g}");
             }
@@ -71,15 +55,32 @@ namespace pv
         }
 
         /// <summary>
+        /// Calculate the day angle for the Earth's orbit around the sun.
+        /// For the Spencer method, offset=1; for the ASCE method, offset=0.
+        /// </summary>
+        /// <param name="offset">an offset in days (integer, default: 1)</param>
+        /// <returns>day angles (Array of double)</returns>
+        public double[] CalcSimpleDayAngleArray(int offset = 1)
+        {
+            var dayAngle = new double[NDays];
+            for (var i = 0; i < NDays; i++)
+            {
+                dayAngle[i] = (2.0 * Math.PI / 365.0) * (DayOfYearArray[i] - offset);
+                Console.WriteLine($"{DayOfYearArray[i]:n} --> {dayAngle[i]:g}");
+            }
+
+            return dayAngle;
+        }
+
+        /// <summary>
         /// Calculate the equation of time according to Spencer (1971)
         /// </summary>
-        /// <param name="dayofyear">the day of the year (integer)</param>
         /// <returns>equation of time (double)</returns>
-        public double[] EquationOfTimeSpencer71(int[] dayofyear)
+        public double[] EquationOfTimeSpencer71()
         {
-            double[] dayAngle = CalcSimpleDayAngleArray(dayofyear);
+            var dayAngle = CalcSimpleDayAngleArray();
             // convert from radians to minutes per day = 24[h/day] * 60[min/h] / 2 / pi
-            double[] eot = new double[NDays];
+            var eot = new double[NDays];
             for (var i = 0; i < NDays; i++)
             {
                 eot[i] = (1440.0 / 2 / Math.PI) * (
@@ -88,6 +89,23 @@ namespace pv
                              - 0.032077 * Math.Sin(dayAngle[i])
                              - 0.014615 * Math.Cos(2.0 * dayAngle[i])
                              - 0.040849 * Math.Sin(2.0 * dayAngle[i]));
+            }
+
+            return eot;
+        }
+
+
+        public double[] EquationOfTimePvCdrom()
+        {
+            // day angle relative to Vernal Equinox, typically March 22 (day number 81)
+            var bday = CalcSimpleDayAngleArray(offset:81);
+            var eot = new double[NDays];
+            for (var i = 0; i < NDays; i++)
+            {
+                // same value but about 2x faster than Spencer (1971)
+                eot[i] = 9.87 * Math.Sin(2.0 * bday[i])
+                         - 7.53 * Math.Cos(bday[i])
+                         - 1.5 * Math.Sin(bday[i]);
             }
 
             return eot;
