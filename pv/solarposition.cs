@@ -6,6 +6,7 @@ namespace pv
     {
         public readonly string[] Times;
         public readonly double Latitude, Longitude;
+        public readonly double TimeZone;
         public readonly int NDays;
         public readonly DateTime[] DateTimeArray;
         public readonly int[] DayOfYearArray;
@@ -19,11 +20,13 @@ namespace pv
         /// ISO 8601 format, seconds precision (Array of String)</param>
         /// <param name="latitude">the latitude in degrees (double)</param>
         /// <param name="longitude">the longitude in degrees (double)</param>
-        public SolarPosition(string[] times, double latitude, double longitude)
+        /// <param name="timezone">the timezone in hours (double)</param>
+        public SolarPosition(string[] times, double latitude, double longitude, double timezone)
         {
             Times = times;
             Latitude = latitude;
             Longitude = longitude;
+            TimeZone = timezone;
             NDays = times.Length;
             DateTimeArray = TimesToDateTimes();
             DayOfYearArray = new int[NDays];
@@ -31,7 +34,7 @@ namespace pv
             {
                 DayOfYearArray[i] = DateTimeArray[i].DayOfYear;
                 Console.WriteLine(
-                    $"{DateTimeArray[i]:dd/MM/yyyy HH:mm:ss} --> {DayOfYearArray[i]:n}");
+                    $"{DateTimeArray[i]:MM/dd/yyyy HH:mm:ss} --> {DayOfYearArray[i]:n}");
             }
         }
 
@@ -73,10 +76,12 @@ namespace pv
         }
 
         /// <summary>
-        /// Calculate the equation of time according to Spencer (1971)
+        /// Calculate the equation of time according to Spencer (1971). The
+        /// equation of time is the difference in time between solar time and
+        /// mean solar time in minutes.
         /// </summary>
         /// <param name="dayAngle">day angle in radians (Array of double)</param>
-        /// <returns>equation of time (Array of double)</returns>
+        /// <returns>equation of time in minutes (Array of double)</returns>
         public double[] EquationOfTimeSpencer71(double[] dayAngle)
         {
             // convert from radians to minutes per day = 24[h/day] * 60[min/h] / 2 / pi
@@ -99,7 +104,7 @@ namespace pv
         /// </summary>
         /// <param name="bday">day angle in radians relative to Vernal
         /// Equinox, typically March 22, day number 81 (Array of double)</param>
-        /// <returns>equation of time (Array of double)</returns>
+        /// <returns>equation of time in minutes (Array of double)</returns>
         public double[] EquationOfTimePvCdrom(double[] bday)
         {
             var eot = new double[NDays];
@@ -152,6 +157,47 @@ namespace pv
             }
 
             return decl;
+        }
+
+        /// <summary>
+        /// Hour angle in local solar time. Zero at local solar noon.
+        /// </summary>
+        /// <param name="eot">equation of time in minutes (Array of double)</param>
+        /// <returns>hour angle in radians</returns>
+        public double[] HourAngle(double[] eot)
+        {
+            var hourAngle = new double[NDays];
+            for (var i = 0; i < NDays; i++)
+            {
+                var hours = DateTimeArray[i].TimeOfDay.TotalHours;
+                Console.WriteLine(
+                    $"{DateTimeArray[i]:MM/dd/yyyy HH:mm:ss} --> {hours:g}");
+                hourAngle[i] = 15.0 * (hours - TimeZone - 12.0) + Longitude + eot[i] / 4.0;
+                hourAngle[i] *= Math.PI / 180.0;
+            }
+
+            return hourAngle;
+        }
+
+        /// <summary>
+        /// Analytical expression of solar zenith angle based on spherical
+        /// trigonometry.
+        /// </summary>
+        /// <param name="hourAngle">hour angle in radians (Array of double)</param>
+        /// <param name="declination">declination in radians (Array of double)</param>
+        /// <returns>solar zenith in degrees (Array of double)</returns>
+        public double[] SolarZenith(double[] hourAngle, double[] declination)
+        {
+            var ze = new double[NDays];
+            var latRad = Latitude * Math.PI / 180.0;
+            for (var i = 0; i < NDays; i++)
+            {
+                ze[i] = Math.Acos(
+                    Math.Cos(declination[i]) * Math.Cos(latRad) * Math.Cos(hourAngle[i]) +
+                    Math.Sin(declination[i]) * Math.Sin(latRad))*180.0/Math.PI;
+            }
+
+            return ze;
         }
     }
 }
