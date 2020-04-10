@@ -75,7 +75,7 @@ namespace pv
         /// <summary>
         /// Calculate the equation of time according to Spencer (1971)
         /// </summary>
-        /// <returns>equation of time (double)</returns>
+        /// <returns>equation of time (Array of double)</returns>
         public double[] EquationOfTimeSpencer71()
         {
             var dayAngle = CalcSimpleDayAngleArray();
@@ -94,7 +94,10 @@ namespace pv
             return eot;
         }
 
-
+        /// <summary>
+        /// Calculate the equation of time according to PVCDROM.
+        /// </summary>
+        /// <returns>equation of time (Array of double)</returns>
         public double[] EquationOfTimePvCdrom()
         {
             // day angle relative to Vernal Equinox, typically March 22 (day number 81)
@@ -109,6 +112,47 @@ namespace pv
             }
 
             return eot;
+        }
+
+        /// <summary>
+        /// Solar declination from Duffie & Beckman and attributed to
+        /// Spencer(1971) and Iqbal(1983).
+        /// </summary>
+        /// <returns>declination in radians (Array of doubles)</returns>
+        public double[] DeclinationSpencer71()
+        {
+            var dayAngle = CalcSimpleDayAngleArray();
+            var decl = new double[NDays];
+            for (var i = 0; i < NDays; i++)
+            {
+                decl[i] = 0.006918
+                          - 0.399912 * Math.Cos(dayAngle[i])
+                          + 0.070257 * Math.Sin(dayAngle[i])
+                          - 0.006758 * Math.Cos(2.0 * dayAngle[i])
+                          + 0.000907 * Math.Sin(2.0 * dayAngle[i])
+                          - 0.002697 * Math.Cos(3.0 * dayAngle[i])
+                          + 0.00148 * Math.Sin(3.0 * dayAngle[i]);
+            }
+
+            return decl;
+        }
+
+        /// <summary>
+        /// Solar declination from Duffie & Beckman and attributed to Cooper (1969).
+        /// </summary>
+        /// <returns>declination in radians (Array of doubles)</returns>
+        public double[] DeclinationCooper69()
+        {
+            //day_angle = _calculate_simple_day_angle(dayofyear)
+            var dayAngle = CalcSimpleDayAngleArray();
+            var decl = new double[NDays];
+            for (var i = 0; i < NDays; i++)
+            {
+                decl[i] = Math.PI / 180.0 * (
+                    23.45 * Math.Sin(dayAngle[i] + (2.0 * Math.PI / 365.0) * 285.0));
+            }
+
+            return decl;
         }
     }
 }

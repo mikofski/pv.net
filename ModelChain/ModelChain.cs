@@ -45,8 +45,8 @@ namespace modelchain
 
                 times = new[]
                 {
-                    "19900101T12:30:00", "19900102T12:30:00", "19900103T12:30:00",
-                    "19900104T12:30:00"
+                    "19900101T12:30:00", "19900102T12:30:00",
+                    "19900103T12:30:00", "19900104T12:30:00"
                 };
             }
             var sp = new pv.SolarPosition(times, lat, lon);
@@ -63,6 +63,20 @@ namespace modelchain
             for (var i = 0; i < sp.NDays; i++)
             {
                 Console.WriteLine($"{sp.DayOfYearArray[i]:n} --> {eotPvCdrom[i]:g}");
+            }
+
+            Console.WriteLine("Declination, Spencer 1971");
+            var declinationSpencer71 = sp.DeclinationSpencer71();
+            for (var i = 0; i < sp.NDays; i++)
+            {
+                Console.WriteLine($"{sp.DayOfYearArray[i]:n} --> {declinationSpencer71[i]:g}");
+            }
+
+            Console.WriteLine("Declination, Cooper 1969");
+            var declinationCooper69 = sp.DeclinationCooper69();
+            for (var i = 0; i < sp.NDays; i++)
+            {
+                Console.WriteLine($"{sp.DayOfYearArray[i]:n} --> {declinationCooper69[i]:g}");
             }
         }
     }
