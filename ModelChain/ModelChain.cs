@@ -50,30 +50,34 @@ namespace modelchain
                 };
             }
             var sp = new pv.SolarPosition(times, lat, lon);
+            Console.WriteLine("Day Angle (radians)");
+            var dayAngle = sp.CalcSimpleDayAngleArray();
 
             Console.WriteLine("Equation of Time, Spencer (1971)");
-            var eot = sp.EquationOfTimeSpencer71();
+            var eot = sp.EquationOfTimeSpencer71(dayAngle);
             for (var i = 0; i < sp.NDays; i++)
             {
                 Console.WriteLine($"{sp.DayOfYearArray[i]:n} --> {eot[i]:g}");
             }
 
+            Console.WriteLine("day angle relative to vernal equinox (radians)");
+            var bday = sp.CalcSimpleDayAngleArray(offset: 81);
             Console.WriteLine("Equation of Time, PVCDROM");
-            var eotPvCdrom = sp.EquationOfTimePvCdrom();
+            var eotPvCdrom = sp.EquationOfTimePvCdrom(bday);
             for (var i = 0; i < sp.NDays; i++)
             {
                 Console.WriteLine($"{sp.DayOfYearArray[i]:n} --> {eotPvCdrom[i]:g}");
             }
 
             Console.WriteLine("Declination, Spencer 1971");
-            var declinationSpencer71 = sp.DeclinationSpencer71();
+            var declinationSpencer71 = sp.DeclinationSpencer71(dayAngle);
             for (var i = 0; i < sp.NDays; i++)
             {
                 Console.WriteLine($"{sp.DayOfYearArray[i]:n} --> {declinationSpencer71[i]:g}");
             }
 
             Console.WriteLine("Declination, Cooper 1969");
-            var declinationCooper69 = sp.DeclinationCooper69();
+            var declinationCooper69 = sp.DeclinationCooper69(dayAngle);
             for (var i = 0; i < sp.NDays; i++)
             {
                 Console.WriteLine($"{sp.DayOfYearArray[i]:n} --> {declinationCooper69[i]:g}");

@@ -55,11 +55,11 @@ namespace pv
         }
 
         /// <summary>
-        /// Calculate the day angle for the Earth's orbit around the sun.
+        /// Calculate the day angle in radians for the Earth's orbit around the sun.
         /// For the Spencer method, offset=1; for the ASCE method, offset=0.
         /// </summary>
         /// <param name="offset">an offset in days (integer, default: 1)</param>
-        /// <returns>day angles (Array of double)</returns>
+        /// <returns>day angles in radians (Array of double)</returns>
         public double[] CalcSimpleDayAngleArray(int offset = 1)
         {
             var dayAngle = new double[NDays];
@@ -75,10 +75,10 @@ namespace pv
         /// <summary>
         /// Calculate the equation of time according to Spencer (1971)
         /// </summary>
+        /// <param name="dayAngle">day angle in radians (Array of double)</param>
         /// <returns>equation of time (Array of double)</returns>
-        public double[] EquationOfTimeSpencer71()
+        public double[] EquationOfTimeSpencer71(double[] dayAngle)
         {
-            var dayAngle = CalcSimpleDayAngleArray();
             // convert from radians to minutes per day = 24[h/day] * 60[min/h] / 2 / pi
             var eot = new double[NDays];
             for (var i = 0; i < NDays; i++)
@@ -97,11 +97,11 @@ namespace pv
         /// <summary>
         /// Calculate the equation of time according to PVCDROM.
         /// </summary>
+        /// <param name="bday">day angle in radians relative to Vernal
+        /// Equinox, typically March 22, day number 81 (Array of double)</param>
         /// <returns>equation of time (Array of double)</returns>
-        public double[] EquationOfTimePvCdrom()
+        public double[] EquationOfTimePvCdrom(double[] bday)
         {
-            // day angle relative to Vernal Equinox, typically March 22 (day number 81)
-            var bday = CalcSimpleDayAngleArray(offset:81);
             var eot = new double[NDays];
             for (var i = 0; i < NDays; i++)
             {
@@ -118,10 +118,10 @@ namespace pv
         /// Solar declination from Duffie & Beckman and attributed to
         /// Spencer(1971) and Iqbal(1983).
         /// </summary>
+        /// <param name="dayAngle">day angle in radians (Array of double)</param>
         /// <returns>declination in radians (Array of doubles)</returns>
-        public double[] DeclinationSpencer71()
+        public double[] DeclinationSpencer71(double[] dayAngle)
         {
-            var dayAngle = CalcSimpleDayAngleArray();
             var decl = new double[NDays];
             for (var i = 0; i < NDays; i++)
             {
@@ -140,11 +140,10 @@ namespace pv
         /// <summary>
         /// Solar declination from Duffie & Beckman and attributed to Cooper (1969).
         /// </summary>
+        /// <param name="dayAngle">day angle in radians (Array of double)</param>
         /// <returns>declination in radians (Array of doubles)</returns>
-        public double[] DeclinationCooper69()
+        public double[] DeclinationCooper69(double[] dayAngle)
         {
-            //day_angle = _calculate_simple_day_angle(dayofyear)
-            var dayAngle = CalcSimpleDayAngleArray();
             var decl = new double[NDays];
             for (var i = 0; i < NDays; i++)
             {
