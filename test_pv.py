@@ -1,7 +1,7 @@
 import clr
 from pathlib import Path
 
-src = Path("C:/Users/mikm/source/repos/pv.net/bin/solarposition.dll")
+src = Path("C:/Users/mikm/source/repos/pv.net/bin/pv.dll")
 assert src.exists()
 
 # note: .dll extension is not needed

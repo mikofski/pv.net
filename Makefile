@@ -9,10 +9,10 @@ win32:
 	) ELSE ( \
 		md $(BUILD) \
 	)
-	csc -lib:$(BUILD) -out:$(BUILD)\$(SRC).dll \
+	csc -lib:$(BUILD) -out:$(BUILD)\$(PROJ).dll \
 		-optimize -platform:x64 -target:library $(PROJ)\$(SRC).cs
 
-	csc -lib:$(BUILD) -out:$(BUILD)\$(TEST).exe -reference:$(SRC).dll \
+	csc -lib:$(BUILD) -out:$(BUILD)\$(TEST).exe -reference:$(PROJ).dll \
 		-optimize -platform:x64 -target:exe $(TEST)\$(TEST).cs 
 	$(BUILD)\$(TEST).exe
 
