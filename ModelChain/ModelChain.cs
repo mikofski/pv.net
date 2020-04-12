@@ -55,8 +55,8 @@ namespace modelchain
 
                 times = new[]
                 {
-                    "19900101T12:30:00", "19900102T12:30:00",
-                    "19900103T12:30:00", "19900104T12:30:00"
+                    "1990-01-01T12:30:00", "1990-01-02T12:30:00",
+                    "1990-01-03T12:30:00", "1990-01-04T12:30:00"
                 };
             }
             var sp = new pv.SolarPosition(times, lat, lon, tz);
@@ -67,7 +67,7 @@ namespace modelchain
             var eot = sp.EquationOfTimeSpencer71(dayAngle);
             for (var i = 0; i < sp.NDays; i++)
             {
-                Console.WriteLine($"{sp.DayOfYearArray[i]:n} --> {eot[i]:g}");
+                Console.WriteLine($"{sp.DayOfYearArray[i]:g}[days] --> {eot[i]:f5}[min]");
             }
 
             Console.WriteLine("day angle relative to vernal equinox (radians)");
@@ -76,35 +76,35 @@ namespace modelchain
             var eotPvCdrom = sp.EquationOfTimePvCdrom(bday);
             for (var i = 0; i < sp.NDays; i++)
             {
-                Console.WriteLine($"{sp.DayOfYearArray[i]:n} --> {eotPvCdrom[i]:g}");
+                Console.WriteLine($"{sp.DayOfYearArray[i]:g}[days] --> {eotPvCdrom[i]:f5}[min]");
             }
 
             Console.WriteLine("Declination, Spencer 1971");
             var declinationSpencer71 = sp.DeclinationSpencer71(dayAngle);
             for (var i = 0; i < sp.NDays; i++)
             {
-                Console.WriteLine($"{sp.DayOfYearArray[i]:n} --> {declinationSpencer71[i]:g}");
+                Console.WriteLine($"{sp.DayOfYearArray[i]:g}[days] --> {declinationSpencer71[i]:f5}[rad]");
             }
 
             Console.WriteLine("Declination, Cooper 1969");
             var declinationCooper69 = sp.DeclinationCooper69(dayAngle);
             for (var i = 0; i < sp.NDays; i++)
             {
-                Console.WriteLine($"{sp.DayOfYearArray[i]:n} --> {declinationCooper69[i]:g}");
+                Console.WriteLine($"{sp.DayOfYearArray[i]:g}[days] --> {declinationCooper69[i]:f5}[rad]");
             }
 
             Console.WriteLine("Hour Angle");
             var hourAngle = sp.HourAngle(eot);
             for (var i = 0; i < sp.NDays; i++)
             {
-                Console.WriteLine($"{sp.DateTimeArray[i]:MM/dd/yyyy HH:mm:ss} --> {hourAngle[i]:g}");
+                Console.WriteLine($"{sp.DateTimeArray[i]:g} --> {hourAngle[i]:f5}[rad]");
             }
 
             Console.WriteLine("Zenith");
             var ze = sp.SolarZenith(hourAngle, declinationSpencer71);
             for (var i = 0; i < sp.NDays; i++)
             {
-                Console.WriteLine($"{sp.DateTimeArray[i]:MM/dd/yyyy HH:mm:ss} --> {ze[i]:g}");
+                Console.WriteLine($"{sp.DateTimeArray[i]:g} --> {ze[i]:f5}[deg]");
             }
         }
     }

@@ -34,7 +34,7 @@ namespace pv
             {
                 DayOfYearArray[i] = DateTimeArray[i].DayOfYear;
                 Console.WriteLine(
-                    $"{DateTimeArray[i]:MM/dd/yyyy HH:mm:ss} --> {DayOfYearArray[i]:n}");
+                    $"{DateTimeArray[i]:g} --> {DayOfYearArray[i]:g}[days]");
             }
         }
 
@@ -46,12 +46,12 @@ namespace pv
         private DateTime[] TimesToDateTimes()
         {
             var dateTimeArray = new DateTime[NDays];
-            const string fmt = "yyyyMMddTHH:mm:ss";
+            const string fmt = "yyyy-MM-ddTHH:mm:ss";
             for (var i = 0; i < NDays; i++)
             {
                 dateTimeArray[i] = DateTime.ParseExact(Times[i], fmt,
                     System.Globalization.CultureInfo.InvariantCulture);
-                Console.WriteLine($"{Times[i]} --> {dateTimeArray[i]:g}");
+                Console.WriteLine($"{Times[i]} --> {dateTimeArray[i]:yyyy-MM-ddTHH:mm:ss}");
             }
 
             return dateTimeArray;
@@ -69,7 +69,7 @@ namespace pv
             for (var i = 0; i < NDays; i++)
             {
                 dayAngle[i] = (2.0 * Math.PI / 365.0) * (DayOfYearArray[i] - offset);
-                Console.WriteLine($"{DayOfYearArray[i]:n} --> {dayAngle[i]:g}");
+                Console.WriteLine($"{DayOfYearArray[i]:g}[days] --> {dayAngle[i]:f5}[rad]");
             }
 
             return dayAngle;
@@ -170,8 +170,7 @@ namespace pv
             for (var i = 0; i < NDays; i++)
             {
                 var hours = DateTimeArray[i].TimeOfDay.TotalHours;
-                Console.WriteLine(
-                    $"{DateTimeArray[i]:MM/dd/yyyy HH:mm:ss} --> {hours:g}");
+                Console.WriteLine($"{DateTimeArray[i]:g} --> {hours:g}[hrs]");
                 hourAngle[i] = 15.0 * (hours - TimeZone - 12.0) + Longitude + eot[i] / 4.0;
                 hourAngle[i] *= Math.PI / 180.0;
             }
