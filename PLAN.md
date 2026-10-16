@@ -6,8 +6,8 @@ and [`pvlib.spa`](https://github.com/pvlib/pvlib-python/blob/main/pvlib/spa.py)
 from Python to .NET. The work is split into a backlog of GitHub issues, one per
 function or work package. Each issue can be done in one PR.
 
-**Agents: read this whole file before you start an issue.** Sections 3–6 are
-rules for *every* issue. The issue only lists what is specific to it.
+**Agents: read this whole file before starting an issue.** Sections 3–6
+apply to *every* issue. Each issue should only add the details specific to that work item.
 
 Reference version: **pvlib-python v0.16.1**. Use this exact version to make
 fixtures, and read the Python source at that tag, e.g.
@@ -18,7 +18,7 @@ fixtures, and read the Python source at that tag, e.g.
 ## 1. Status of `pvlib.solarposition` in pv.net
 
 `[x]` means the function is already in `pv/solarposition.cs`. Every other item
-is either in the backlog (section 7) or out of scope (section 2).
+is either in the backlog in section 7 or explicitly out of scope in section 2.
 
 ### Public functions
 
@@ -89,13 +89,13 @@ of pvlib:
 5. **Types**
    * A pvlib `numeric` or array value → `double[]`; a scalar `float` →
      `double`.
-   * A timezone-aware `pandas.DatetimeIndex` → `DateTimeOffset[]`. The UTC
-     offset of each element is its timezone. Where pvlib "assumes UTC" for
-     naive times, the caller passes offset `+00:00`.
+   * A timezone-aware `pandas.DatetimeIndex` → `DateTimeOffset[]`, preserving
+     each timestamp’s UTC offset. When pvlib treats naive times as UTC, the caller must pass
+     `DateTimeOffset` values with offset `+00:00`.
    * Unix time → `double[]`, in seconds since 1970-01-01T00:00:00Z.
    * Where pvlib takes `delta_t` as a float or `None`, use
-     `double? deltaT = 67.0`. A value of `null` means "calculate it with
-     `Spa.CalculateDeltaT`".
+     `double? deltaT = 67.0`. Pass null to request automatic calculation via
+     `Spa.CalculateDeltaT`, matching pvlib’s None behavior.
    * Where pvlib takes `how` or `numthreads` (numba options), leave them out.
      They have no meaning in .NET.
 6. **Return types**
@@ -115,7 +115,8 @@ of pvlib:
      * `DateTimeOffset[] Times`, `Sunrise`, `Sunset`, `Transit`
 8. **Errors.** Where pvlib raises `ValueError`, throw `ArgumentException`.
    Where a method or option is not supported, throw `NotSupportedException`.
-9. **NaN.** Pass NaN through the way numpy does. Do not throw on NaN input.
+9. Preserve `NaN` inputs and outputs wherever pvlib/numpy does. Do not throw on
+   `NaN` input unless the pvlib function itself raises.
 10. **No new runtime dependencies** in `pv.csproj`. Use only `System.*`.
 11. **No `Console.WriteLine`** in new library code.
 
@@ -125,10 +126,10 @@ of pvlib:
 
 Every new public method **must** have:
 
-* `<summary>`: a one- to three-sentence description of what the function
-  calculates. Include the pvlib function it ports, e.g.
+* `<summary>`: one to three sentences describing what the function
+  calculates, including the pvlib function it ports, e.g.
   `Port of pvlib.solarposition.solar_azimuth_analytical.`
-* One `<param>` for **every** parameter, in this exact format:
+* One `<param>` entry for **every** parameter, using the exact format below:
 
   ```
   <param name="NAME">DESCRIPTION [UNITS] (TYPE[, default: VALUE])</param>
@@ -136,8 +137,8 @@ Every new public method **must** have:
 
   * `UNITS` is the physical unit: `radians`, `degrees`, `minutes`, `hours`,
     `seconds`, `days`, `Pa`, `m`, `degrees C`, `AU`, `percent`, `fraction`,
-    etc. Use `n/d` for values without a dimension, such as counts, flags,
-    strings or method names.
+    etc. Use `n/d` for values without physical units, such as counts, flags,
+    strings, enums, or method names.
   * `TYPE` is the .NET type in words: `double`, `int`, `string`, `bool`,
     `array of double`, `array of DateTimeOffset`, `nullable double`, etc.
   * `default: VALUE` is required if the parameter has a default value, and
@@ -163,9 +164,9 @@ function**.
    * It imports `pvlib` (v0.16.1) and calls the pvlib function with fixed
      inputs.
    * It writes `tests/pv.Tests/Fixtures/<pvlib_function_name>.json`.
-   * The JSON has the shape `{"pvlib_version": "...", "cases": [{"name": "...", "inputs": {...}, "expected": {...}}]}`.
-   * Times are written as ISO 8601 strings **with UTC offset**
-     (`Timestamp.isoformat()`). NaN is written as `null`.
+   * The JSON must have the shape `{"pvlib_version": "...", "cases": [{"name": "...", "inputs": {...}, "expected": {...}}]}`.
+   * Serialize timestamps as ISO 8601 strings including the UTC offset,
+     using `Timestamp.isoformat()`. Serialize `NaN` as `null`.
    * Commit both the script and the generated JSON.
 2. **Reuse pvlib's test data where possible.** Use the inputs and expected
    values in
@@ -185,9 +186,9 @@ function**.
    a published value, such as the NREL SPA results, assert against that value
    too, with pvlib's tolerance.
 3. **Tolerances**
-   * Compared with the fixture: relative tolerance `1e-9` for closed-form
-     functions and `1e-7` for SPA functions, unless the issue says otherwise.
-     Times must match within 1 second.
+   * Compare outputs against the fixture using relative tolerance `1e-9` for closed-form
+     functions and `1e-7` for SPA functions, unless the issue specifies otherwise.
+     Compare timestamps within 1 second.
    * Compared with published values: use the same decimals or `atol` as the
      pvlib test.
 4. Port pvlib's **edge-case tests** too, such as NaN handling, `ValueError`
@@ -235,7 +236,7 @@ own module:
 ## 6. How agents should work through the backlog
 
 1. Choose an **open** issue from section 7 whose **Depends on** issues are all
-   closed. **P0 must be merged first.**
+   closed. **P0 must be merged before any dependent issue is started.**
 2. Read the issue, this file, and the pvlib v0.16.1 source and tests for the
    function.
 3. Set up Python for fixtures:
@@ -247,8 +248,8 @@ own module:
 6. Write the xUnit tests from section 4.2.
 7. Run `dotnet build pv.net.sln` and `dotnet test`.
 8. Tick the boxes in this file, then open a PR that closes the issue.
-9. If the pvlib behavior can't be reproduced, or a convention in section 3
-   doesn't fit, **stop and ask in the issue**. Do not invent a different API.
+9. If pvlib behavior cannot be reproduced, or if a section 3 convention
+   does not fit, stop and ask in the issue before making a design change. Do not invent a different API.
 
 ## 7. Backlog
 
