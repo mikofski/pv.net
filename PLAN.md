@@ -309,7 +309,7 @@ own module:
 
 Work-package IDs (`P0`, `P1`, `S1`–`S3`, `A1`, `F1`–`F7`) are stable
 planning/dependency labels; the Issue column links separate GitHub issue
-numbers. P1 still needs a follow-on issue.
+numbers. 
 
 | ID | Issue | Work item | Depends on | Done |
 |---|---|---|---|---|
