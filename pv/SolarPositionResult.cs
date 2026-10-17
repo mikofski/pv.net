@@ -23,14 +23,14 @@ namespace pv
         public double[] ApparentZenith { get; init; } = Array.Empty<double>();
 
         /// <summary>
-        /// Refraction-corrected solar elevation angles, in degrees (array of double).
-        /// </summary>
-        public double[] ApparentElevation { get; init; } = Array.Empty<double>();
-
-        /// <summary>
         /// Solar elevation angles without refraction correction, in degrees (array of double).
         /// </summary>
         public double[] Elevation { get; init; } = Array.Empty<double>();
+
+        /// <summary>
+        /// Refraction-corrected solar elevation angles, in degrees (array of double).
+        /// </summary>
+        public double[] ApparentElevation { get; init; } = Array.Empty<double>();
 
         /// <summary>
         /// Solar azimuth angles, in degrees (array of double).
