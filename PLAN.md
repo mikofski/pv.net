@@ -255,11 +255,7 @@ own module:
 
 | ID | Issue | Work item | Depends on | Done |
 |---|---|---|---|---|
-<<<<<<< HEAD
 | P0 | [#1](https://github.com/mikofski/pv.net/issues/1) | Test infrastructure: xUnit project, fixture pipeline, retarget to `net8.0`, shared result classes | – | [x] |
-=======
-| P0 | [#1](https://github.com/mikofski/pv.net/issues/1) | Test infrastructure: xUnit project, fixture pipeline, retarget to `net8.0`, shared result classes | – | [ ] |
->>>>>>> origin/master
 | S1 | [#2](https://github.com/mikofski/pv.net/issues/2) | `Spa`: Julian day/century/millennium functions and `calculate_deltat` | P0 | [ ] |
 | S2 | [#3](https://github.com/mikofski/pv.net/issues/3) | `Spa`: solar position chain, from heliocentric terms to `equation_of_time` and `solar_position` | S1 | [ ] |
 | S3 | [#4](https://github.com/mikofski/pv.net/issues/4) | `Spa`: `transit_sunrise_sunset` and `earthsun_distance` | S2 | [ ] |
