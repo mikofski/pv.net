@@ -65,10 +65,7 @@ of pvlib:
 `get_solarposition` (F7) must throw `NotSupportedException` for the methods
 `pyephem` and `nrel_c`.
 
-The intended fixed-offset timestamp workflow is scoped to **non-leap-year
-operation** for now (day of year 1–365). Leap-year support is deferred to a
-separate workflow; do not silently drop February 29 or remap later dates.
-Named-timezone/DST handling is also outside this fixed-offset workflow.
+Named-timezone/DST handling is outside this fixed-offset workflow.
 
 `ModelChain` is a demo/example caller, **not** a strict port of pvlib's
 model chain. All ModelChain-specific architecture is deferred to later
@@ -110,6 +107,9 @@ planning/issues; it must not drive the library API in this backlog.
      preserve that offset in result timestamps. Use UTC instants internally
      where the algorithm requires them, without changing the local date used
      for daily events. No named timezone or DST rules are inferred.
+     Timestamps may use any time step; batches need not be hourly or span a
+     full year. Leap years are supported without calendar manipulation:
+     preserve February 29 and subsequent dates as supplied.
      When pvlib treats naive times as UTC, pass values with offset `+00:00`,
      e.g. naive `2025-01-01T12:00:00` → `2025-01-01T12:00:00+00:00`.
    * Unix time → `double[]`, in seconds since 1970-01-01T00:00:00Z.
@@ -233,12 +233,11 @@ function**.
      pvlib test.
 4. Port pvlib's **edge-case tests** too, such as NaN handling, `ValueError`
    cases and boundary angles.
-   For the high-level timestamp workflow, use non-leap-year, fixed-offset
-   cases. Adapt named-zone inputs to a fixed offset and choose non-leap-year
-   equivalents where needed, regenerating expected outputs with pvlib rather
-   than relabeling published values. Low-level SPA reference constants remain
-   valid tests of numerical functions, not a promise of leap-year workflow
-   support.
+   For the high-level timestamp workflow, use fixed-offset cases, including
+   leap-year dates (February 29 and day 366) and non-hourly time steps.
+   Adapt named-zone inputs to a fixed offset where needed, regenerating
+   expected outputs with pvlib rather than relabeling published values.
+   Keep leap-year timestamps unchanged; no dates need to be removed or remapped.
 5. **Daily events:** include multiple hours on one local date, evening-local
    inputs whose UTC date differs, and polar day/night cases. Preserve input
    order and repeated daily events where pvlib produces them; test missing
@@ -350,7 +349,7 @@ numbers. P1 still needs a follow-on issue.
 * Add a GitHub Actions workflow, `.github/workflows/dotnet.yml`, that runs
   `dotnet build` and `dotnet test` on push and pull request.
 * Prove that the pipeline works: write a fixture script for the
-  **already ported** `equation_of_time_spencer71` (day of year 1–365) and a
+  **already ported** `equation_of_time_spencer71` (day of year 1–366) and a
   test for `SolarPosition.EquationOfTimeSpencer71`.
 
 ## 8. Existing methods and P1 transition
@@ -426,6 +425,5 @@ sunrise or sunset does not invalidate the calculated transit.
 
 **Open decision (P1):** specify final `Location` construction/validation and
 high-level parameter order, and settle day-angle/day-of-year migration before
-changing the affected signatures. Leap-year workflow support and all
-ModelChain-specific architectural decisions remain deferred, not implicit
-requirements of P1.
+changing the affected signatures. All ModelChain-specific architectural
+decisions remain deferred, not implicit requirements of P1.
