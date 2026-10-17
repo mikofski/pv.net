@@ -384,8 +384,8 @@ Known differences to account for in that transition:
   `solar_zenith_analytical` returns **radians**.
 * `SolarPosition.HourAngle` returns **radians**, while pvlib's `hour_angle`
   returns **degrees**. It also uses one fixed timezone offset.
-* The existing methods take a day angle instead of `dayofyear`, and use
-  instance state.
+* The existing Spencer and PVCDROM methods take a day angle instead of
+  `dayofyear`, and use instance state.
 * Their XML docs don't yet follow the `[UNITS] (TYPE, default)` format in
   section 4.1.
 
@@ -396,9 +396,16 @@ than retaining the degrees contract through a compatibility shim. P1 must also
 change the existing `HourAngle` API from radians to degrees to match pvlib's
 `hour_angle` contract. This is an intentional breaking change: update affected
 callers and tests together rather than retaining the radians contract through a
-compatibility shim. Day-angle versus day-of-year migration remains an explicit
-P1 design question, not an excuse to change helper inputs silently. Unrelated
-legacy cleanup does not block the independent numerical work above.
+compatibility shim. Migrate `EquationOfTimeSpencer71`,
+`EquationOfTimePvCdrom`, and `DeclinationSpencer71` to accept day-of-year arrays
+and calculate their day angles internally, as pvlib does. The reusable
+`CalcSimpleDayAngleArray(dayOfYear, offset = 1)` helper uses
+`2π / 365 * (dayOfYear - offset)`: use offset 1 for Spencer methods and offset
+81 for PVCDROM. Do not pass precomputed day angles to these analytical methods
+or preserve the old signatures through compatibility shims. This settles the
+day-angle migration for these methods; any other affected signature remains an
+explicit P1 design question. Unrelated legacy cleanup does not block the
+independent numerical work above.
 
 ### 8.1 Daily-event semantics and approved missing-event representation
 
