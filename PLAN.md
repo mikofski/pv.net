@@ -389,12 +389,14 @@ Known differences to account for in that transition:
 * Their XML docs don't yet follow the `[UNITS] (TYPE, default)` format in
   section 4.1.
 
-The existing degrees-returning `SolarZenith` is not itself a defect; a
-pvlib-compatible analytical entry point must follow pvlib's radians contract.
-Align the canonical hour-angle API to degrees and update radians-consuming
-callers together. Day-angle versus day-of-year migration remains an explicit
-P1 design question, not an excuse to change helper inputs silently. Unrelated
-legacy cleanup does not block the independent numerical work above.
+P1 must change the existing analytical `SolarZenith` API from degrees to
+radians to match pvlib's `solar_zenith_analytical` contract. This is an
+intentional breaking change: update affected callers and tests together rather
+than retaining the degrees contract through a compatibility shim. Align the
+canonical hour-angle API to degrees and update radians-consuming callers
+together. Day-angle versus day-of-year migration remains an explicit P1 design
+question, not an excuse to change helper inputs silently. Unrelated legacy
+cleanup does not block the independent numerical work above.
 
 ### 8.1 Daily-event semantics and approved missing-event representation
 
