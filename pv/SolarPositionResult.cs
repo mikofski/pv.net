@@ -48,13 +48,13 @@ namespace pv
         public double[] HourAngle { get; init; } = Array.Empty<double>();
 
         /// <summary>
-        /// Equation of time, in minutes (array of double).
+        /// Equation of time, in minutes (array of double); null if not calculated.
         /// </summary>
-        public double[] EquationOfTime { get; init; } = Array.Empty<double>();
+        public double[] EquationOfTime { get; init; }
 
         /// <summary>
-        /// Local solar time, in hours (array of double).
+        /// Local solar time, in hours (array of double); null if not calculated.
         /// </summary>
-        public double[] SolarTime { get; init; } = Array.Empty<double>();
+        public double[] SolarTime { get; init; }
     }
 }
