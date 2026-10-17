@@ -8,6 +8,11 @@ namespace pv
     public class SunRiseSetTransitResult
     {
         /// <summary>
+        /// Input times associated with the solar events, in n/d (array of DateTimeOffset).
+        /// </summary>
+        public DateTimeOffset[] Times { get; init; } = Array.Empty<DateTimeOffset>();
+
+        /// <summary>
         /// Sunrise times, in n/d (array of DateTimeOffset).
         /// </summary>
         public DateTimeOffset[] Sunrise { get; init; } = Array.Empty<DateTimeOffset>();
