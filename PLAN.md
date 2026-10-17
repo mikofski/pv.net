@@ -24,7 +24,7 @@ is either in the backlog in section 7 or explicitly out of scope in section 2.
 
 - [ ] `get_solarposition` → backlog **F7** (#12)
 - [ ] `spa_c` → out of scope
-- [ ] `spa_python` → backlog **F4** (#9)
+- [ ] pvlib `spa_python` → public `SolarPosition.Spa` (`spa`), backlog **F4** (#9)
 - [ ] `sun_rise_set_transit_spa` → backlog **F6** (#11)
 - [ ] `sun_rise_set_transit_ephem` → out of scope
 - [ ] `pyephem` → out of scope
@@ -60,10 +60,16 @@ of pvlib:
 |---|---|
 | `pyephem`, `sun_rise_set_transit_ephem`, `pyephem_earthsun_distance` | Need the PyEphem package |
 | `calc_time` | Needs PyEphem and `scipy.optimize` |
-| `spa_c` | Needs NREL's SPA C source, which has a restrictive license and is not shipped with pvlib. `spa_python` (F4) gives the same results. |
+| `spa_c` | Needs NREL's SPA C source, which has a restrictive license and is not shipped with pvlib. `spa` (F4, port of pvlib `spa_python`) gives the same results. |
 
 `get_solarposition` (F7) must throw `NotSupportedException` for the methods
 `pyephem` and `nrel_c`.
+
+Named-timezone/DST handling is outside this fixed-offset workflow.
+
+`ModelChain` is a demo/example caller, **not** a strict port of pvlib's
+model chain. All ModelChain-specific architecture is deferred to later
+planning/issues; it must not drive the library API in this backlog.
 
 ## 3. Design conventions (all issues)
 
@@ -74,24 +80,38 @@ of pvlib:
      `public static class pv.Spa` (see section 5).
    * Ports of `pvlib.atmosphere` go in a new file `pv/atmosphere.cs`, class
      `public static class pv.Atmosphere`.
-2. **Static, pvlib-style signatures.** New functions are `public static`
-   methods. Every input is a parameter, in the same order as pvlib. Do not use
-   the instance state of `SolarPosition`, such as `Latitude` or `TimeZone`.
-   The existing instance methods stay as they are; do not change them in
-   these issues.
+2. **Location inputs, stateless calculations.** Introduce `pv.Location` for
+   shared site inputs: latitude, longitude, altitude, and a fixed UTC offset.
+   It holds no timestamps, calculated arrays, or last-result state.
+   High-level `public static` methods on `SolarPosition` accept a `Location`,
+   explicit `DateTimeOffset[]` timestamps, and per-call calculation options.
+   Calculations must not depend on the existing `SolarPosition` instance
+   state. Preserve the low-level helper structure with explicit numerical
+   inputs; helpers do not need a `Location` when they only use numerical arrays.
+   P1 specifies this API transition; do not refactor legacy methods piecemeal
+   in feature issues or add deprecation machinery or compatibility shims.
 3. **Naming.** Use PascalCase for the pvlib name, e.g.
    `solar_azimuth_analytical` → `SolarAzimuthAnalytical` and
    `sun_rise_set_transit_spa` → `SunRiseSetTransitSpa`. Parameters are
    camelCase versions of the pvlib names, e.g. `equation_of_time` →
-   `equationOfTime` and `delta_t` → `deltaT`.
+   `equationOfTime` and `delta_t` → `deltaT`. The high-level API is named
+   `spa` → `SolarPosition.Spa`, **not** `SpaPython`; `spa_python` is only the
+   upstream source/fixture name. `ephemeris` → `SolarPosition.Ephemeris`.
 4. **Units match pvlib exactly.** If pvlib takes or returns radians, so does
    the port. If pvlib uses degrees, so does the port. Do not convert units.
 5. **Types**
    * A pvlib `numeric` or array value → `double[]`; a scalar `float` →
      `double`.
-   * A timezone-aware `pandas.DatetimeIndex` → `DateTimeOffset[]`, preserving
-     each timestamp’s UTC offset. When pvlib treats naive times as UTC, the caller must pass
-     `DateTimeOffset` values with offset `+00:00`.
+   * A timezone-aware `pandas.DatetimeIndex` → `DateTimeOffset[]`. For this
+     workflow, use one fixed offset matching `Location` throughout the batch;
+     preserve that offset in result timestamps. Use UTC instants internally
+     where the algorithm requires them, without changing the local date used
+     for daily events. No named timezone or DST rules are inferred.
+     Timestamps may use any time step; batches need not be hourly or span a
+     full year. Leap years are supported without calendar manipulation:
+     preserve February 29 and subsequent dates as supplied.
+     When pvlib treats naive times as UTC, pass values with offset `+00:00`,
+     e.g. naive `2025-01-01T12:00:00` → `2025-01-01T12:00:00+00:00`.
    * Unix time → `double[]`, in seconds since 1970-01-01T00:00:00Z.
    * Where pvlib takes `delta_t` as a float or `None`, use
      `double? deltaT = 67.0`. Pass null to request automatic calculation via
@@ -99,26 +119,44 @@ of pvlib:
    * Where pvlib takes `how` or `numthreads` (numba options), leave them out.
      They have no meaning in .NET.
 6. **Return types**
-   * A pvlib function that returns a single array → `double[]`.
-   * One that returns a `DataFrame` → a result class (see the next point).
-   * One that returns a tuple → a C# tuple with named elements, e.g.
-     `(DateTimeOffset[] Sunrise, DateTimeOffset[] Sunset, DateTimeOffset[] Transit)`.
+   * Individual analytical helpers (day angle, equation of time, declination,
+     hour angle, zenith, azimuth) continue to return `double[]`, not result
+     objects. Earth–Sun distance also returns `double[]`.
+   * Only high-level position methods (`Spa`, `Ephemeris`,
+     `GetSolarposition`) return `SolarPositionResult`; high-level daily-event
+     methods (`SunRiseSetTransitGeometric`, `SunRiseSetTransitSpa`) return
+     `SunRiseSetTransitResult`.
+   * Low-level SPA scalar, array, and named-tuple outputs stay numerical;
+     map them into result objects only at the high-level boundary.
 7. **Shared result classes** are created **once**, in issue **P0**, so that
    parallel PRs don't conflict:
    * `pv.SolarPositionResult`
+     * One batch result, not an array of batch results. Each populated output
+       array has `Times.Length` elements aligned by input index.
      * `DateTimeOffset[] Times`
      * `double[] ApparentZenith`, `Zenith`, `ApparentElevation`, `Elevation`,
        `Azimuth` (all in degrees)
      * `double[] EquationOfTime` (minutes; `null` if not calculated)
      * `double[] SolarTime` (hours; `null` if not calculated)
+     * `ApparentZenith`/`ApparentElevation` include atmospheric refraction;
+       `Zenith`/`Elevation` do not.
    * `pv.SunRiseSetTransitResult`
-     * `DateTimeOffset[] Times`, `Sunrise`, `Sunset`, `Transit`
+     * `DateTimeOffset[] Times`, `Transit`; `DateTimeOffset?[] Sunrise`,
+       `Sunset`, with one aligned event entry per input timestamp.
+       Use `null` for a sunrise or sunset that does not occur, such as at
+       polar extremes. Evaluate sunrise and sunset independently; their
+       absence does not imply that transit is absent.
+     * Repeating a valid daily event for hourly inputs is not a missing-event
+       fallback. See section 8.1 for upstream behavior and required tests.
 8. **Errors.** Where pvlib raises `ValueError`, throw `ArgumentException`.
    Where a method or option is not supported, throw `NotSupportedException`.
 9. Preserve `NaN` inputs and outputs wherever pvlib/numpy does. Do not throw on
    `NaN` input unless the pvlib function itself raises.
 10. **No new runtime dependencies** in `pv.csproj`. Use only `System.*`.
-11. **No `Console.WriteLine`** in new library code.
+11. **Silent library.** Remove existing library console writes in P1 and add
+    none in new code. Defer logging integration entirely: no logger
+    abstraction, logging infrastructure, or logging dependencies in this pass.
+    Intentional output from the demo caller is outside the library.
 
 ## 4. Requirements for every issue (definition of done)
 
@@ -165,8 +203,10 @@ function**.
      inputs.
    * It writes `tests/pv.Tests/Fixtures/<pvlib_function_name>.json`.
    * The JSON must have the shape `{"pvlib_version": "...", "cases": [{"name": "...", "inputs": {...}, "expected": {...}}]}`.
-   * Serialize timestamps as ISO 8601 strings including the UTC offset,
-     using `Timestamp.isoformat()`. Serialize `NaN` as `null`.
+   * Serialize timestamps as ISO 8601 strings including the original fixed
+     UTC offset, using `Timestamp.isoformat()`; do not normalize fixtures to
+     UTC. Serialize numeric `NaN` and missing timestamps (`NaT`) as JSON
+     `null`, not invented dates.
    * Commit both the script and the generated JSON.
 2. **Reuse pvlib's test data where possible.** Use the inputs and expected
    values in
@@ -193,6 +233,16 @@ function**.
      pvlib test.
 4. Port pvlib's **edge-case tests** too, such as NaN handling, `ValueError`
    cases and boundary angles.
+   For the high-level timestamp workflow, use fixed-offset cases, including
+   leap-year dates (February 29 and day 366) and non-hourly time steps.
+   Adapt named-zone inputs to a fixed offset where needed, regenerating
+   expected outputs with pvlib rather than relabeling published values.
+   Keep leap-year timestamps unchanged; no dates need to be removed or remapped.
+5. **Daily events:** include multiple hours on one local date, evening-local
+   inputs whose UTC date differs, and polar day/night cases. Preserve input
+   order and repeated daily events where pvlib produces them; test missing
+   sunrise/sunset independently of transit. Map JSON `null` event values to
+   nullable sunrise/sunset entries per sections 3 and 8.1.
 
 ### 4.3 Checks before opening the PR
 
@@ -204,7 +254,8 @@ function**.
 
 ## 5. New module: `pv/spa.cs` (port of `pvlib/spa.py`)
 
-`spa_python`, `sun_rise_set_transit_spa` and `nrel_earthsun_distance` all call
+`spa` (the port of pvlib `spa_python`), `sun_rise_set_transit_spa` and
+`nrel_earthsun_distance` all call
 `pvlib.spa`, the Python version of NREL's Solar Position Algorithm (Reda &
 Andreas 2004, NREL/TP-560-34302). So `pvlib/spa.py` is ported first, as its
 own module:
@@ -226,10 +277,13 @@ own module:
   * **S2** the solar position chain
   * **S3** transit/sunrise/sunset and Earth–Sun distance
 * `pv.SolarPosition` uses the module like this:
-  * `SpaPython` (F4) calls `Spa.SolarPosition`
+  * `SolarPosition.Spa` (F4) calls `pv.Spa.SolarPosition`
   * `NrelEarthsunDistance` (F5) calls `Spa.EarthsunDistance`
   * `SunRiseSetTransitSpa` (F6) calls `Spa.TransitSunriseSunset`
   * all of them call `Spa.CalculateDeltaT` when `deltaT` is `null`
+  * `Spa` remains a static numerical module; `SolarPosition` does not contain
+    a SPA instance. Qualify `pv.Spa` where needed to distinguish the module
+    from the high-level method.
 * Tests go in `tests/pv.Tests/SpaTests.cs` and mirror the `SpaBase` class in
   pvlib's `test_spa.py`, one test per function, using that file's constants.
 
@@ -253,20 +307,25 @@ own module:
 
 ## 7. Backlog
 
+Work-package IDs (`P0`, `P1`, `S1`–`S3`, `A1`, `F1`–`F7`) are stable
+planning/dependency labels; the Issue column links separate GitHub issue
+numbers.
+
 | ID | Issue | Work item | Depends on | Done |
 |---|---|---|---|---|
 | P0 | [#1](https://github.com/mikofski/pv.net/issues/1) | Test infrastructure: xUnit project, fixture pipeline, retarget to `net8.0`, shared result classes | – | [x] |
+| P1 | [#16](https://github.com/mikofski/pv.net/issues/16) | `Location` API transition, stateless calculation boundaries, silent library, result-contract reconciliation (section 8) | P0 | [ ] |
 | S1 | [#2](https://github.com/mikofski/pv.net/issues/2) | `Spa`: Julian day/century/millennium functions and `calculate_deltat` | P0 | [ ] |
 | S2 | [#3](https://github.com/mikofski/pv.net/issues/3) | `Spa`: solar position chain, from heliocentric terms to `equation_of_time` and `solar_position` | S1 | [ ] |
 | S3 | [#4](https://github.com/mikofski/pv.net/issues/4) | `Spa`: `transit_sunrise_sunset` and `earthsun_distance` | S2 | [ ] |
 | A1 | [#7](https://github.com/mikofski/pv.net/issues/7) | `Atmosphere`: `pres2alt` and `alt2pres` (needed by `get_solarposition`) | P0 | [ ] |
 | F1 | [#6](https://github.com/mikofski/pv.net/issues/6) | `solar_azimuth_analytical` | P0 | [ ] |
-| F2 | [#5](https://github.com/mikofski/pv.net/issues/5) | `sun_rise_set_transit_geometric` and its three private helpers | P0 | [ ] |
-| F3 | [#8](https://github.com/mikofski/pv.net/issues/8) | `ephemeris` | P0 | [ ] |
-| F4 | [#9](https://github.com/mikofski/pv.net/issues/9) | `spa_python` and `_datetime_to_unixtime` | S2 | [ ] |
+| F2 | [#5](https://github.com/mikofski/pv.net/issues/5) | `sun_rise_set_transit_geometric` and its three private helpers | P1 | [ ] |
+| F3 | [#8](https://github.com/mikofski/pv.net/issues/8) | `ephemeris` | P1 | [ ] |
+| F4 | [#9](https://github.com/mikofski/pv.net/issues/9) | Public `spa` (`SolarPosition.Spa`, port of `spa_python`) and `_datetime_to_unixtime` | S2, P1 | [ ] |
 | F5 | [#10](https://github.com/mikofski/pv.net/issues/10) | `nrel_earthsun_distance` | S3 | [ ] |
-| F6 | [#11](https://github.com/mikofski/pv.net/issues/11) | `sun_rise_set_transit_spa` | S3 | [ ] |
-| F7 | [#12](https://github.com/mikofski/pv.net/issues/12) | `get_solarposition` | A1, F3, F4 | [ ] |
+| F6 | [#11](https://github.com/mikofski/pv.net/issues/11) | `sun_rise_set_transit_spa` | S3, P1 | [ ] |
+| F7 | [#12](https://github.com/mikofski/pv.net/issues/12) | `get_solarposition` | A1, F3, F4, P1 | [ ] |
 
 ### P0 – Test infrastructure
 
@@ -283,26 +342,99 @@ own module:
 * Add assertion helpers: `AssertAllClose(expected, actual, rtol, atol)`, which
   treats NaN as equal to NaN, and `AssertTimesClose(expected, actual, toleranceSeconds)`.
 * Add `pv/SolarPositionResult.cs` and `pv/SunRiseSetTransitResult.cs`, as
-  described in section 3, with full XML docs.
+  described in section 3, with full XML docs. Use nullable sunrise/sunset
+  entries and support their JSON `null` mapping in the fixture loader.
 * Add `tests/fixtures/scripts/README.md` that explains how to create the venv
   and regenerate fixtures.
 * Add a GitHub Actions workflow, `.github/workflows/dotnet.yml`, that runs
   `dotnet build` and `dotnet test` on push and pull request.
 * Prove that the pipeline works: write a fixture script for the
-  **already ported** `equation_of_time_spencer71` (day of year 1–365) and a
+  **already ported** `equation_of_time_spencer71` (day of year 1–366) and a
   test for `SolarPosition.EquationOfTimeSpencer71`.
 
-## 8. Known differences in existing methods (follow-up, not in this backlog)
+## 8. Existing methods and P1 transition
+
+This is a documentation-only planning update; no runtime migration is made
+here. P1 is the follow-on coding work package, after P0 and before the
+high-level feature ports that consume its contracts. Standalone numerical
+work (S1–S3, A1, F1) does not wait for a façade redesign.
+
+P1 acceptance criteria:
+
+* Add `Location` and explicit high-level signature contracts per section 3,
+  retaining stateless numerical helpers and keeping timestamps/options per call.
+* Reconcile P0's actual result classes with section 3 before high-level ports
+  begin, including apparent/non-apparent fields, optional-output semantics,
+  aligned array lengths, and a documented array ownership policy.
+* Retire the unused mutable `ZenithArray`/`AzimuthArray` placeholders rather
+  than keeping duplicate result state or replacing them with an array of
+  batch results. Document direct caller migration; no deprecation machinery
+  or compatibility shims.
+* Remove all library console writes without replacing them with logging.
+  Update nonconforming public XML docs. ModelChain remains an example caller;
+  only mechanical call-site changes needed by the API transition belong here,
+  not ModelChain-specific architecture.
+* Characterize existing behavior before changing units or inputs; use
+  pvlib-generated fixtures for canonical signatures and update affected callers
+  together. Do not silently reinterpret an existing `double[]` argument.
+
+Known differences to account for in that transition:
 
 * `SolarPosition.SolarZenith` returns **degrees**, while pvlib's
   `solar_zenith_analytical` returns **radians**.
 * `SolarPosition.HourAngle` returns **radians**, while pvlib's `hour_angle`
   returns **degrees**. It also uses one fixed timezone offset.
-* The existing methods take a day angle instead of `dayofyear`, and use
-  instance state.
-* The existing methods write to the console with `Console.WriteLine`.
+* The existing Spencer and PVCDROM methods take a day angle instead of
+  `dayofyear`, and use instance state.
 * Their XML docs don't yet follow the `[UNITS] (TYPE, default)` format in
   section 4.1.
 
-These can be fixed later, in separate issues, without changing the backlog
-above.
+P1 must change the existing analytical `SolarZenith` API from degrees to
+radians to match pvlib's `solar_zenith_analytical` contract. This is an
+intentional breaking change: update affected callers and tests together rather
+than retaining the degrees contract through a compatibility shim. P1 must also
+change the existing `HourAngle` API from radians to degrees to match pvlib's
+`hour_angle` contract. This is an intentional breaking change: update affected
+callers and tests together rather than retaining the radians contract through a
+compatibility shim. Migrate `EquationOfTimeSpencer71`,
+`EquationOfTimePvCdrom`, and `DeclinationSpencer71` to accept day-of-year arrays
+and calculate their day angles internally, as pvlib does. The reusable
+`CalcSimpleDayAngleArray(dayOfYear, offset = 1)` helper uses
+`2π / 365 * (dayOfYear - offset)`: use offset 1 for Spencer methods and offset
+81 for PVCDROM. Do not pass precomputed day angles to these analytical methods
+or preserve the old signatures through compatibility shims. This settles the
+day-angle migration for these methods; any other affected signature remains an
+explicit P1 design question. Unrelated legacy cleanup does not block the
+independent numerical work above.
+
+### 8.1 Daily-event semantics and approved missing-event representation
+
+In [pvlib v0.16.1 `sun_rise_set_transit_spa`](https://github.com/pvlib/pvlib-python/blob/v0.16.1/pvlib/solarposition.py),
+the local calendar date of each input is used to construct the midnight-UTC
+input required by the numerical SPA routine. Consequently, hourly inputs on
+the same local date repeat the same sunrise, sunset, and transit when the
+calculation parameters (including `deltaT`) are identical. Preserve this
+per-input alignment, not a deduplicated daily table or a “next event after
+this hour” interpretation. The geometric method also keeps one entry per
+input but may vary if its supplied declination/equation-of-time arrays vary;
+do not impose SPA's daily repetition on all methods.
+
+This repetition does **not** define missing-event behavior.
+[SPA's `transit_sunrise_sunset`](https://github.com/pvlib/pvlib-python/blob/v0.16.1/pvlib/spa.py)
+uses `NaN` for sunrise/sunset when the horizon-crossing calculation has no
+solution; the wrapper converts those values to pandas `NaT`. Transit can
+still be present. Missing events must stay distinguishable from valid repeated
+events: do not copy a previous day's time or use a default timestamp.
+
+**Approved decision (P0/P1, F2/F6):** `SunRiseSetTransitResult.Sunrise` and
+`Sunset` use `DateTimeOffset?[]`. An entry is `null` when that event does not
+occur, for example when the sun never rises or never sets at polar extremes.
+Keep the arrays aligned with `Times`; do not omit entries. Document this
+contract in the result XML docs, map fixture JSON `null` to nullable entries,
+and cover polar cases in tests. Evaluate each event independently; a missing
+sunrise or sunset does not invalidate the calculated transit.
+
+**Open decision (P1):** specify final `Location` construction/validation and
+high-level parameter order, and settle day-angle/day-of-year migration before
+changing the affected signatures. All ModelChain-specific architectural
+decisions remain deferred, not implicit requirements of P1.
