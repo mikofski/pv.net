@@ -392,11 +392,13 @@ Known differences to account for in that transition:
 P1 must change the existing analytical `SolarZenith` API from degrees to
 radians to match pvlib's `solar_zenith_analytical` contract. This is an
 intentional breaking change: update affected callers and tests together rather
-than retaining the degrees contract through a compatibility shim. Align the
-canonical hour-angle API to degrees and update radians-consuming callers
-together. Day-angle versus day-of-year migration remains an explicit P1 design
-question, not an excuse to change helper inputs silently. Unrelated legacy
-cleanup does not block the independent numerical work above.
+than retaining the degrees contract through a compatibility shim. P1 must also
+change the existing `HourAngle` API from radians to degrees to match pvlib's
+`hour_angle` contract. This is an intentional breaking change: update affected
+callers and tests together rather than retaining the radians contract through a
+compatibility shim. Day-angle versus day-of-year migration remains an explicit
+P1 design question, not an excuse to change helper inputs silently. Unrelated
+legacy cleanup does not block the independent numerical work above.
 
 ### 8.1 Daily-event semantics and approved missing-event representation
 
