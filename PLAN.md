@@ -141,10 +141,11 @@ planning/issues; it must not drive the library API in this backlog.
      * `ApparentZenith`/`ApparentElevation` include atmospheric refraction;
        `Zenith`/`Elevation` do not.
    * `pv.SunRiseSetTransitResult`
-     * `DateTimeOffset[] Times`, with one aligned event entry per input
-       timestamp in `Sunrise`, `Sunset`, and `Transit`. The event element
-       type is **pending the missing-event decision in section 8.1**;
-       non-nullable `DateTimeOffset[]` alone cannot represent missing events.
+     * `DateTimeOffset[] Times`, `Transit`; `DateTimeOffset?[] Sunrise`,
+       `Sunset`, with one aligned event entry per input timestamp.
+       Use `null` for a sunrise or sunset that does not occur, such as at
+       polar extremes. Evaluate sunrise and sunset independently; their
+       absence does not imply that transit is absent.
      * Repeating a valid daily event for hourly inputs is not a missing-event
        fallback. See section 8.1 for upstream behavior and required tests.
 8. **Errors.** Where pvlib raises `ValueError`, throw `ArgumentException`.
@@ -241,8 +242,8 @@ function**.
 5. **Daily events:** include multiple hours on one local date, evening-local
    inputs whose UTC date differs, and polar day/night cases. Preserve input
    order and repeated daily events where pvlib produces them; test missing
-   sunrise/sunset independently of transit. Resolve section 8.1 before fixing
-   the .NET missing-event representation or its fixture-loader mapping.
+   sunrise/sunset independently of transit. Map JSON `null` event values to
+   nullable sunrise/sunset entries per sections 3 and 8.1.
 
 ### 4.3 Checks before opening the PR
 
@@ -342,8 +343,8 @@ numbers. P1 still needs a follow-on issue.
 * Add assertion helpers: `AssertAllClose(expected, actual, rtol, atol)`, which
   treats NaN as equal to NaN, and `AssertTimesClose(expected, actual, toleranceSeconds)`.
 * Add `pv/SolarPositionResult.cs` and `pv/SunRiseSetTransitResult.cs`, as
-  described in section 3, with full XML docs. Resolve section 8.1 before
-  finalizing the event member types; do not assume non-nullable event arrays.
+  described in section 3, with full XML docs. Use nullable sunrise/sunset
+  entries and support their JSON `null` mapping in the fixture loader.
 * Add `tests/fixtures/scripts/README.md` that explains how to create the venv
   and regenerate fixtures.
 * Add a GitHub Actions workflow, `.github/workflows/dotnet.yml`, that runs
@@ -396,7 +397,7 @@ callers together. Day-angle versus day-of-year migration remains an explicit
 P1 design question, not an excuse to change helper inputs silently. Unrelated
 legacy cleanup does not block the independent numerical work above.
 
-### 8.1 Daily-event semantics and open decision
+### 8.1 Daily-event semantics and approved missing-event representation
 
 In [pvlib v0.16.1 `sun_rise_set_transit_spa`](https://github.com/pvlib/pvlib-python/blob/v0.16.1/pvlib/solarposition.py),
 the local calendar date of each input is used to construct the midnight-UTC
@@ -415,13 +416,13 @@ solution; the wrapper converts those values to pandas `NaT`. Transit can
 still be present. Missing events must stay distinguishable from valid repeated
 events: do not copy a previous day's time or use a default timestamp.
 
-**Open decision (P0/P1, blocks final event contract and F2/F6):** how should
-`SunRiseSetTransitResult` represent a missing event per timestamp? Nullable
-`DateTimeOffset?[]` event members or explicit per-event validity masks are
-possible; neither is approved by this plan. Agree the representation and
-document it in section 3, the result XML docs, fixture loader, and polar-case
-tests before implementation. Evaluate each event independently; do not mark
-transit missing solely because sunrise/sunset are absent.
+**Approved decision (P0/P1, F2/F6):** `SunRiseSetTransitResult.Sunrise` and
+`Sunset` use `DateTimeOffset?[]`. An entry is `null` when that event does not
+occur, for example when the sun never rises or never sets at polar extremes.
+Keep the arrays aligned with `Times`; do not omit entries. Document this
+contract in the result XML docs, map fixture JSON `null` to nullable entries,
+and cover polar cases in tests. Evaluate each event independently; a missing
+sunrise or sunset does not invalidate the calculated transit.
 
 **Open decision (P1):** specify final `Location` construction/validation and
 high-level parameter order, and settle day-angle/day-of-year migration before
