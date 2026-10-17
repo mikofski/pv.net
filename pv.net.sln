@@ -7,23 +7,62 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "pv", "pv\pv.csproj", "{396B
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "modelchain", "ModelChain\modelchain.csproj", "{460D272B-7E57-4540-A870-087B158C8B04}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pv.Tests", "tests\pv.Tests\pv.Tests.csproj", "{DFBEFA44-184A-4408-BF2A-896CAEA4CA30}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x86 = Debug|x86
 		Release|x64 = Release|x64
+		Release|Any CPU = Release|Any CPU
+		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{396BFF2F-2653-417C-872D-53453D824299}.Debug|x64.ActiveCfg = Debug|x64
 		{396BFF2F-2653-417C-872D-53453D824299}.Debug|x64.Build.0 = Debug|x64
+		{396BFF2F-2653-417C-872D-53453D824299}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{396BFF2F-2653-417C-872D-53453D824299}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{396BFF2F-2653-417C-872D-53453D824299}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{396BFF2F-2653-417C-872D-53453D824299}.Debug|x86.Build.0 = Debug|Any CPU
 		{396BFF2F-2653-417C-872D-53453D824299}.Release|x64.ActiveCfg = Release|x64
 		{396BFF2F-2653-417C-872D-53453D824299}.Release|x64.Build.0 = Release|x64
+		{396BFF2F-2653-417C-872D-53453D824299}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{396BFF2F-2653-417C-872D-53453D824299}.Release|Any CPU.Build.0 = Release|Any CPU
+		{396BFF2F-2653-417C-872D-53453D824299}.Release|x86.ActiveCfg = Release|Any CPU
+		{396BFF2F-2653-417C-872D-53453D824299}.Release|x86.Build.0 = Release|Any CPU
 		{460D272B-7E57-4540-A870-087B158C8B04}.Debug|x64.ActiveCfg = Debug|x64
 		{460D272B-7E57-4540-A870-087B158C8B04}.Debug|x64.Build.0 = Debug|x64
+		{460D272B-7E57-4540-A870-087B158C8B04}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{460D272B-7E57-4540-A870-087B158C8B04}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{460D272B-7E57-4540-A870-087B158C8B04}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{460D272B-7E57-4540-A870-087B158C8B04}.Debug|x86.Build.0 = Debug|Any CPU
 		{460D272B-7E57-4540-A870-087B158C8B04}.Release|x64.ActiveCfg = Release|x64
 		{460D272B-7E57-4540-A870-087B158C8B04}.Release|x64.Build.0 = Release|x64
+		{460D272B-7E57-4540-A870-087B158C8B04}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{460D272B-7E57-4540-A870-087B158C8B04}.Release|Any CPU.Build.0 = Release|Any CPU
+		{460D272B-7E57-4540-A870-087B158C8B04}.Release|x86.ActiveCfg = Release|Any CPU
+		{460D272B-7E57-4540-A870-087B158C8B04}.Release|x86.Build.0 = Release|Any CPU
+		{DFBEFA44-184A-4408-BF2A-896CAEA4CA30}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{DFBEFA44-184A-4408-BF2A-896CAEA4CA30}.Debug|x64.Build.0 = Debug|Any CPU
+		{DFBEFA44-184A-4408-BF2A-896CAEA4CA30}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DFBEFA44-184A-4408-BF2A-896CAEA4CA30}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DFBEFA44-184A-4408-BF2A-896CAEA4CA30}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{DFBEFA44-184A-4408-BF2A-896CAEA4CA30}.Debug|x86.Build.0 = Debug|Any CPU
+		{DFBEFA44-184A-4408-BF2A-896CAEA4CA30}.Release|x64.ActiveCfg = Release|Any CPU
+		{DFBEFA44-184A-4408-BF2A-896CAEA4CA30}.Release|x64.Build.0 = Release|Any CPU
+		{DFBEFA44-184A-4408-BF2A-896CAEA4CA30}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DFBEFA44-184A-4408-BF2A-896CAEA4CA30}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DFBEFA44-184A-4408-BF2A-896CAEA4CA30}.Release|x86.ActiveCfg = Release|Any CPU
+		{DFBEFA44-184A-4408-BF2A-896CAEA4CA30}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{DFBEFA44-184A-4408-BF2A-896CAEA4CA30} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F1C0A73C-B08D-41D6-8FAC-F3F9D1F0E9AB}
