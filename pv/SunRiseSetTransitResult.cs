@@ -13,14 +13,14 @@ namespace pv
         public DateTimeOffset[] Times { get; init; } = Array.Empty<DateTimeOffset>();
 
         /// <summary>
-        /// Sunrise times, in n/d (array of DateTimeOffset).
+        /// Sunrise times, in n/d (array of nullable DateTimeOffset); null when sunrise does not occur.
         /// </summary>
-        public DateTimeOffset[] Sunrise { get; init; } = Array.Empty<DateTimeOffset>();
+        public DateTimeOffset?[] Sunrise { get; init; } = Array.Empty<DateTimeOffset?>();
 
         /// <summary>
-        /// Sunset times, in n/d (array of DateTimeOffset).
+        /// Sunset times, in n/d (array of nullable DateTimeOffset); null when sunset does not occur.
         /// </summary>
-        public DateTimeOffset[] Sunset { get; init; } = Array.Empty<DateTimeOffset>();
+        public DateTimeOffset?[] Sunset { get; init; } = Array.Empty<DateTimeOffset?>();
 
         /// <summary>
         /// Solar transit times, in n/d (array of DateTimeOffset).
