@@ -37,7 +37,7 @@ is either in the backlog in section 7 or explicitly out of scope in section 2.
 - [x] `declination_spencer71` → `SolarPosition.DeclinationSpencer71`
 - [x] `declination_cooper69` → `SolarPosition.DeclinationCooper69`
 - [ ] `solar_azimuth_analytical` → backlog **F1** (#6)
-- [x] `solar_zenith_analytical` → `SolarPosition.SolarZenith`
+- [x] `solar_zenith_analytical` → `SolarPosition.SolarZenithAnalytical`
 - [x] `hour_angle` → `SolarPosition.HourAngle`
 - [ ] `sun_rise_set_transit_geometric` → backlog **F2** (#5)
 
@@ -393,8 +393,9 @@ P1 acceptance criteria:
 
 Known differences to account for in that transition:
 
-* `SolarPosition.SolarZenith` returns **degrees**, while pvlib's
-  `solar_zenith_analytical` returns **radians**.
+* Before P1, `SolarPosition.SolarZenith` returned **degrees**, while pvlib's
+  `solar_zenith_analytical` returns **radians**. P1 renamed the method to
+  `SolarPosition.SolarZenithAnalytical` and aligned its output with pvlib.
 * `SolarPosition.HourAngle` returns **radians**, while pvlib's `hour_angle`
   returns **degrees**. It also uses one fixed timezone offset.
 * The legacy Spencer, PVCDROM, and Cooper declination/equation-of-time methods
@@ -402,16 +403,16 @@ Known differences to account for in that transition:
 * Their XML docs don't yet follow the `[UNITS] (TYPE, default)` format in
   section 4.1.
 
-P1 must change the existing analytical `SolarZenith` API from degrees to
-radians to match pvlib's `solar_zenith_analytical` contract. This is an
-intentional breaking change: update affected callers and tests together rather
-than retaining the degrees contract through a compatibility shim. P1 must also
-change the existing `HourAngle` API from radians to degrees to match pvlib's
-`hour_angle` contract. This is an intentional breaking change: update affected
-callers and tests together rather than retaining the radians contract through a
-compatibility shim. `SolarZenith` keeps the legacy hour-angle/declination
-array units (radians), takes latitude in radians to match pvlib, and changes its
-output unit to radians.
+P1 changed the existing analytical `SolarZenith` API from degrees to radians
+to match pvlib's `solar_zenith_analytical` contract and renamed it
+`SolarZenithAnalytical`. This is an intentional breaking change: affected
+callers and tests were updated rather than retaining the degrees contract
+through a compatibility shim. P1 also changed the existing `HourAngle` API
+from radians to degrees to match pvlib's `hour_angle` contract. This is an
+intentional breaking change: affected callers and tests were updated rather
+than retaining the radians contract through a compatibility shim.
+`SolarZenithAnalytical` keeps the legacy hour-angle/declination array units
+(radians), takes latitude in radians to match pvlib, and returns radians.
 `HourAngle` takes a `Location`, timestamp array, and equation-of-time array;
 every timestamp must use the location's fixed offset. Migrate
 `EquationOfTimeSpencer71`, `EquationOfTimePvCdrom`, and `DeclinationSpencer71`

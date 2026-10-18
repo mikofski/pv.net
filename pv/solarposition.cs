@@ -166,24 +166,46 @@ namespace pv
         /// <returns>solar zenith angle [radians] (array of double)</returns>
         /// <exception cref="ArgumentNullException">An array argument is null.</exception>
         /// <exception cref="ArgumentException">Array lengths differ.</exception>
-        public static double[] SolarZenith(
+        public static double[] SolarZenithAnalytical(
             double latitude,
             double[] hourAngle,
             double[] declination)
         {
             ArgumentNullException.ThrowIfNull(hourAngle);
+
+            var latitudes = new double[hourAngle.Length];
+            Array.Fill(latitudes, latitude);
+            return SolarZenithAnalytical(latitudes, hourAngle, declination);
+        }
+
+        /// <summary>
+        /// Port of pvlib.solarposition.solar_zenith_analytical.
+        /// </summary>
+        /// <param name="latitude">latitude, positive north of equator [radians] (array of double)</param>
+        /// <param name="hourAngle">solar hour angle [radians] (array of double)</param>
+        /// <param name="declination">solar declination [radians] (array of double)</param>
+        /// <returns>solar zenith angle [radians] (array of double)</returns>
+        /// <exception cref="ArgumentNullException">An array argument is null.</exception>
+        /// <exception cref="ArgumentException">Array lengths differ.</exception>
+        public static double[] SolarZenithAnalytical(
+            double[] latitude,
+            double[] hourAngle,
+            double[] declination)
+        {
+            ArgumentNullException.ThrowIfNull(latitude);
+            ArgumentNullException.ThrowIfNull(hourAngle);
             ArgumentNullException.ThrowIfNull(declination);
-            if (hourAngle.Length != declination.Length)
+            if (latitude.Length != hourAngle.Length || hourAngle.Length != declination.Length)
             {
-                throw new ArgumentException("hourAngle and declination must have the same length.");
+                throw new ArgumentException("latitude, hourAngle, and declination must have the same length.");
             }
 
             var zenith = new double[hourAngle.Length];
             for (var i = 0; i < hourAngle.Length; i++)
             {
                 zenith[i] = Math.Acos(
-                    Math.Cos(declination[i]) * Math.Cos(latitude) * Math.Cos(hourAngle[i])
-                    + Math.Sin(declination[i]) * Math.Sin(latitude));
+                    Math.Cos(declination[i]) * Math.Cos(latitude[i]) * Math.Cos(hourAngle[i])
+                    + Math.Sin(declination[i]) * Math.Sin(latitude[i]));
             }
 
             return zenith;
