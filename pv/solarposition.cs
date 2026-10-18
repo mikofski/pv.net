@@ -96,20 +96,19 @@ namespace pv
         }
 
         /// <summary>
-        /// Calculates solar declination using the legacy Cooper (1969) day-angle input.
+        /// Port of pvlib.solarposition.declination_cooper69.
         /// </summary>
-        /// <param name="dayAngle">day angle [radians] (array of double)</param>
+        /// <param name="dayOfYear">day of year [days] (array of double)</param>
         /// <returns>solar declination [radians] (array of double)</returns>
-        /// <exception cref="ArgumentNullException">dayAngle is null.</exception>
-        public static double[] DeclinationCooper69(double[] dayAngle)
+        /// <exception cref="ArgumentNullException">dayOfYear is null.</exception>
+        public static double[] DeclinationCooper69(double[] dayOfYear)
         {
-            ArgumentNullException.ThrowIfNull(dayAngle);
+            var dayAngle = CalcSimpleDayAngleArray(dayOfYear, offset: -284);
 
             var declination = new double[dayAngle.Length];
             for (var i = 0; i < dayAngle.Length; i++)
             {
-                declination[i] = Math.PI / 180.0
-                    * (23.45 * Math.Sin(dayAngle[i] + (2.0 * Math.PI / 365.0) * 285.0));
+                declination[i] = Math.PI / 180.0 * 23.45 * Math.Sin(dayAngle[i]);
             }
 
             return declination;

@@ -32,7 +32,6 @@ def main():
     zenith = solar_zenith_analytical(
         np.radians(latitude), np.radians(hour_angles), declinations
     )
-    cooper_day_angles = _calculate_simple_day_angle(day_of_year)
     expected = {
         "day_angle": _calculate_simple_day_angle(day_of_year),
         "equation_of_time_spencer71": equation_of_time_spencer71(day_of_year),
@@ -55,7 +54,6 @@ def main():
                     "longitude": longitude,
                     "altitude": 12.0,
                     "equation_of_time_for_times": eot.tolist(),
-                    "cooper_day_angle": cooper_day_angles.tolist(),
                 },
                 "expected": {name: values.tolist() for name, values in expected.items()},
             }

@@ -69,9 +69,6 @@ namespace modelchain
             }
             var location = new Location(lat, lon, altitude: 0, TimeSpan.FromHours(tz));
             var dayOfYear = Array.ConvertAll(times, time => (double)time.DayOfYear);
-            Console.WriteLine("Day Angle (radians)");
-            var dayAngle = SolarPosition.CalcSimpleDayAngleArray(dayOfYear);
-
             Console.WriteLine("Equation of Time, Spencer (1971)");
             var eot = SolarPosition.EquationOfTimeSpencer71(dayOfYear);
             for (var i = 0; i < times.Length; i++)
@@ -79,7 +76,6 @@ namespace modelchain
                 Console.WriteLine($"{dayOfYear[i]:g}[days] --> {eot[i]:f5}[min]");
             }
 
-            Console.WriteLine("day angle relative to vernal equinox (radians)");
             Console.WriteLine("Equation of Time, PVCDROM");
             var eotPvCdrom = SolarPosition.EquationOfTimePvCdrom(dayOfYear);
             for (var i = 0; i < times.Length; i++)
@@ -95,7 +91,7 @@ namespace modelchain
             }
 
             Console.WriteLine("Declination, Cooper 1969");
-            var declinationCooper69 = SolarPosition.DeclinationCooper69(dayAngle);
+            var declinationCooper69 = SolarPosition.DeclinationCooper69(dayOfYear);
             for (var i = 0; i < times.Length; i++)
             {
                 Console.WriteLine($"{dayOfYear[i]:g}[days] --> {declinationCooper69[i]:f5}[rad]");

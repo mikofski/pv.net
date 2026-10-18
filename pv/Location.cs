@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 
 namespace pv
@@ -28,14 +29,25 @@ namespace pv
         public TimeSpan UtcOffset { get; }
 
         /// <summary>
+        /// Optional site name [n/d].
+        /// </summary>
+        public string? Name { get; }
+
+        /// <summary>
         /// Creates a site location with a fixed UTC offset.
         /// </summary>
         /// <param name="latitude">latitude, positive north of the equator [degrees] (double)</param>
         /// <param name="longitude">longitude, positive east of Greenwich [degrees] (double)</param>
         /// <param name="altitude">site altitude above sea level [m] (double)</param>
         /// <param name="utcOffset">fixed offset from UTC [n/d] (TimeSpan)</param>
+        /// <param name="name">optional location name [n/d] (string, default: null)</param>
         /// <exception cref="ArgumentOutOfRangeException">A coordinate, altitude, or UTC offset is outside its valid range.</exception>
-        public Location(double latitude, double longitude, double altitude, TimeSpan utcOffset)
+        public Location(
+            double latitude,
+            double longitude,
+            double altitude,
+            TimeSpan utcOffset,
+            string? name = null)
         {
             if (!double.IsFinite(latitude) || latitude < -90.0 || latitude > 90.0)
             {
@@ -65,6 +77,7 @@ namespace pv
             Longitude = longitude;
             Altitude = altitude;
             UtcOffset = utcOffset;
+            Name = name;
         }
     }
 }

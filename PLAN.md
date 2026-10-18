@@ -81,7 +81,8 @@ planning/issues; it must not drive the library API in this backlog.
    * Ports of `pvlib.atmosphere` go in a new file `pv/atmosphere.cs`, class
      `public static class pv.Atmosphere`.
 2. **Location inputs, stateless calculations.** Introduce `pv.Location` for
-   shared site inputs: latitude, longitude, altitude, and a fixed UTC offset.
+   shared site inputs: latitude, longitude, altitude, a fixed UTC offset, and
+   an optional name.
    It holds no timestamps, calculated arrays, or last-result state.
    High-level `public static` methods on `SolarPosition` accept a `Location`,
    explicit `DateTimeOffset[]` timestamps, and per-call calculation options.
@@ -362,7 +363,8 @@ P1 acceptance criteria:
 
 * Add `Location` and explicit high-level signature contracts per section 3,
   retaining stateless numerical helpers and keeping timestamps/options per call.
-  **Decision:** construct `Location(latitude, longitude, altitude, utcOffset)`;
+  **Decision:** construct `Location(latitude, longitude, altitude, utcOffset, name = null)`,
+  with the optional `name` retained as site metadata;
   require finite latitude and longitude within [-90, 90] and [-180, 180]
   degrees, finite altitude in meters, and a whole-minute `TimeSpan` offset
   within ±14 hours. High-level methods take `Location` first, then
@@ -390,8 +392,8 @@ Known differences to account for in that transition:
   `solar_zenith_analytical` returns **radians**.
 * `SolarPosition.HourAngle` returns **radians**, while pvlib's `hour_angle`
   returns **degrees**. It also uses one fixed timezone offset.
-* The existing Spencer and PVCDROM methods take a day angle instead of
-  `dayofyear`, and use instance state.
+* The legacy Spencer, PVCDROM, and Cooper declination/equation-of-time methods
+  took day angles instead of `dayofyear`, and used instance state.
 * Their XML docs don't yet follow the `[UNITS] (TYPE, default)` format in
   section 4.1.
 
@@ -408,18 +410,16 @@ output unit to radians.
 `HourAngle` takes a `Location`, timestamp array, and equation-of-time array;
 every timestamp must use the location's fixed offset. Migrate
 `EquationOfTimeSpencer71`, `EquationOfTimePvCdrom`, and `DeclinationSpencer71`
-to accept day-of-year arrays and calculate their day angles internally, as
-pvlib does. The reusable
+and `DeclinationCooper69` accept day-of-year arrays and calculate their day
+angles internally, as pvlib does. The reusable
 `CalcSimpleDayAngleArray(dayOfYear, offset = 1)` helper uses
 `2π / 365 * (dayOfYear - offset)`: use offset 1 for Spencer methods and offset
-81 for PVCDROM. Do not pass precomputed day angles to these analytical methods
-or preserve the old signatures through compatibility shims. This settles the
-day-angle migration for these methods; any other affected signature remains an
-explicit P1 design question. `DeclinationCooper69` remains an array-based helper
-with its existing radian day-angle input and output so that its existing array
-meaning is not silently changed; whether it should later adopt pvlib's
-day-of-year signature is an open question. Unrelated legacy cleanup does not
-block the independent numerical work above.
+81 for PVCDROM, and offset -284 for Cooper (1969). Do not pass precomputed day
+angles to these analytical methods or preserve old signatures through
+compatibility shims. The Cooper offset uses the equivalent
+`(dayOfYear + 284) * 2π / 365` form described in
+[pvlib issue #2902](https://github.com/pvlib/pvlib-python/issues/2902).
+Unrelated legacy cleanup does not block the independent numerical work above.
 
 Approved differences from pvlib v0.16.1 for this transition:
 
@@ -427,12 +427,6 @@ Approved differences from pvlib v0.16.1 for this transition:
   not named timezone/DST behavior or pandas timestamps.
 * The previous instance constructor and methods are removed without
   compatibility shims; callers migrate to static array helpers and `Location`.
-
-Open question:
-
-* Should `DeclinationCooper69` eventually adopt pvlib's day-of-year input and
-  radians output, or should its current explicit day-angle contract remain?
-  P1 preserves that input meaning; it does not block dependent high-level APIs.
 
 ### 8.1 Daily-event semantics and approved missing-event representation
 

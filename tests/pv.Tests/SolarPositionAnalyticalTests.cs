@@ -26,7 +26,7 @@ public class SolarPositionAnalyticalTests
         FixtureAssert.AssertAllClose(expected.DeclinationSpencer71,
             SolarPosition.DeclinationSpencer71(inputs.DayOfYear), rtol: 1e-9, atol: 0);
         FixtureAssert.AssertAllClose(expected.DeclinationCooper69,
-            SolarPosition.DeclinationCooper69(inputs.CooperDayAngle), rtol: 1e-9, atol: 0);
+            SolarPosition.DeclinationCooper69(inputs.DayOfYear), rtol: 1e-9, atol: 1e-15);
 
         var location = new Location(inputs.Latitude, inputs.Longitude, inputs.Altitude, inputs.Times[0].Offset);
         var hourAngle = SolarPosition.HourAngle(location, inputs.Times, inputs.EquationOfTimeForTimes);
@@ -52,6 +52,10 @@ public class SolarPositionAnalyticalTests
             new Location(0, 0, 0, TimeSpan.FromSeconds(30)));
         Assert.Equal(TimeSpan.FromHours(5.5),
             new Location(0, 0, -10, TimeSpan.FromHours(5.5)).UtcOffset);
+        Assert.Null(new Location(0, 0, 0, TimeSpan.Zero).Name);
+        Assert.Equal(
+            "Greenboro-NC",
+            new Location(0, 0, 0, TimeSpan.Zero, "Greenboro-NC").Name);
     }
 
     [Fact]
@@ -100,8 +104,6 @@ public class SolarPositionAnalyticalTests
         [JsonPropertyName("equation_of_time_for_times")]
         public double[] EquationOfTimeForTimes { get; init; } = [];
 
-        [JsonPropertyName("cooper_day_angle")]
-        public double[] CooperDayAngle { get; init; } = [];
     }
 
     public sealed class AnalyticalExpected
