@@ -1,0 +1,12 @@
+{
+  "pvlib_version": "test",
+  "cases": [
+    {
+      "name": "null_and_offset",
+      "inputs": {
+        "timestamp": "2021-06-01T12:30:00+05:30"
+      },
+      "expected": [2.0, null]
+    }
+  ]
+}
