@@ -321,7 +321,7 @@ numbers.
 |---|---|---|---|---|
 | P0 | [#1](https://github.com/mikofski/pv.net/issues/1) | Test infrastructure: xUnit project, fixture pipeline, retarget to `net8.0`, shared result classes | – | [x] |
 | P1 | [#16](https://github.com/mikofski/pv.net/issues/16) | `Location` API transition, stateless calculation boundaries, silent library, result-contract reconciliation (section 8) | P0 | [x] |
-| S1 | [#2](https://github.com/mikofski/pv.net/issues/2) | `Spa`: Julian day/century/millennium functions and `calculate_deltat` | P0 | [ ] |
+| S1 | [#2](https://github.com/mikofski/pv.net/issues/2) | `Spa`: Julian day/century/millennium functions and `calculate_deltat` | P0 | [x] |
 | S2 | [#3](https://github.com/mikofski/pv.net/issues/3) | `Spa`: solar position chain, from heliocentric terms to `equation_of_time` and `solar_position` | S1 | [ ] |
 | S3 | [#4](https://github.com/mikofski/pv.net/issues/4) | `Spa`: `transit_sunrise_sunset` and `earthsun_distance` | S2 | [ ] |
 | A1 | [#7](https://github.com/mikofski/pv.net/issues/7) | `Atmosphere`: `pres2alt` and `alt2pres` (needed by `get_solarposition`) | P0 | [ ] |
