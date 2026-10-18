@@ -106,7 +106,7 @@ namespace modelchain
 
             Console.WriteLine("Zenith");
             var hourAngleRadians = Array.ConvertAll(hourAngle, angle => angle * Math.PI / 180.0);
-            var ze = SolarPosition.SolarZenith(lat * Math.PI / 180.0, hourAngleRadians, declinationSpencer71);
+            var ze = SolarPosition.SolarZenithAnalytical(lat * Math.PI / 180.0, hourAngleRadians, declinationSpencer71);
             for (var i = 0; i < times.Length; i++)
             {
                 Console.WriteLine($"{times[i]:g} --> {ze[i]:f5}[rad]");

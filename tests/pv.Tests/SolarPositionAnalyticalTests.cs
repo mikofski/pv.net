@@ -6,7 +6,7 @@ namespace pv.Tests;
 public class SolarPositionAnalyticalTests
 {
     [Fact]
-    public void MatchesPvlibFixtureForLeapYearAndNonHourlyInputs()
+    public void AnalyticalHelpersMatchPvlibFixtureForLeapYearAndNonHourlyInputs()
     {
         var fixture = FixtureLoader.Load<AnalyticalInputs, AnalyticalExpected>("solarposition_analytical.json");
         var testCase = Assert.Single(fixture.Cases);
@@ -35,7 +35,7 @@ public class SolarPositionAnalyticalTests
         var declination = new[] { expected.DeclinationSpencer71[59], expected.DeclinationSpencer71[59], expected.DeclinationSpencer71[60] };
         var hourAngleRadians = Array.ConvertAll(hourAngle, angle => angle * Math.PI / 180.0);
         FixtureAssert.AssertAllClose(expected.SolarZenith,
-            SolarPosition.SolarZenith(inputs.Latitude * Math.PI / 180.0, hourAngleRadians, declination),
+            SolarPosition.SolarZenithAnalytical(inputs.Latitude * Math.PI / 180.0, hourAngleRadians, declination),
             rtol: 1e-9, atol: 0);
     }
 
@@ -77,7 +77,7 @@ public class SolarPositionAnalyticalTests
         Assert.True(double.IsNaN(SolarPosition.EquationOfTimePvCdrom(nan)[0]));
         Assert.True(double.IsNaN(SolarPosition.DeclinationSpencer71(nan)[0]));
         Assert.True(double.IsNaN(SolarPosition.DeclinationCooper69(nan)[0]));
-        Assert.True(double.IsNaN(SolarPosition.SolarZenith(0, nan, [0])[0]));
+        Assert.True(double.IsNaN(SolarPosition.SolarZenithAnalytical(0, nan, [0])[0]));
         Assert.True(double.IsNaN(SolarPosition.HourAngle(
             new Location(0, 0, 0, TimeSpan.Zero),
             [new DateTimeOffset(2024, 1, 1, 12, 0, 0, TimeSpan.Zero)],

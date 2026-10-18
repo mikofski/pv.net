@@ -37,7 +37,7 @@ is either in the backlog in section 7 or explicitly out of scope in section 2.
 - [x] `declination_spencer71` → `SolarPosition.DeclinationSpencer71`
 - [x] `declination_cooper69` → `SolarPosition.DeclinationCooper69`
 - [ ] `solar_azimuth_analytical` → backlog **F1** (#6)
-- [x] `solar_zenith_analytical` → `SolarPosition.SolarZenith`
+- [x] `solar_zenith_analytical` → `SolarPosition.SolarZenithAnalytical`
 - [x] `hour_angle` → `SolarPosition.HourAngle`
 - [ ] `sun_rise_set_transit_geometric` → backlog **F2** (#5)
 
