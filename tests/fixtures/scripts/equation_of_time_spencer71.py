@@ -7,8 +7,8 @@ from pvlib.solarposition import equation_of_time_spencer71
 
 
 def main():
-    days_of_year = list(range(1, 366))
-    expected = equation_of_time_spencer71(np.asarray(days_of_year))
+    days_of_year = np.arange(1, 367)
+    expected = equation_of_time_spencer71(days_of_year)
     fixture = {
         "pvlib_version": pvlib.__version__,
         "cases": [
