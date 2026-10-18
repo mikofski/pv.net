@@ -206,7 +206,7 @@
       ]
     },
     {
-      "name": "julian_day_issue_2207_0",
+      "name": "julian_day_issue_2077_0",
       "inputs": {
         "components": [
           2000,
@@ -221,7 +221,7 @@
       "expected": 2451545.0
     },
     {
-      "name": "julian_day_issue_2207_1",
+      "name": "julian_day_issue_2077_1",
       "inputs": {
         "components": [
           1999,
@@ -236,7 +236,7 @@
       "expected": 2451179.5
     },
     {
-      "name": "julian_day_issue_2207_2",
+      "name": "julian_day_issue_2077_2",
       "inputs": {
         "components": [
           1987,
@@ -251,7 +251,7 @@
       "expected": 2446822.5
     },
     {
-      "name": "julian_day_issue_2207_3",
+      "name": "julian_day_issue_2077_3",
       "inputs": {
         "components": [
           1987,
@@ -266,7 +266,7 @@
       "expected": 2446966.0
     },
     {
-      "name": "julian_day_issue_2207_4",
+      "name": "julian_day_issue_2077_4",
       "inputs": {
         "components": [
           1988,
@@ -281,7 +281,7 @@
       "expected": 2447187.5
     },
     {
-      "name": "julian_day_issue_2207_5",
+      "name": "julian_day_issue_2077_5",
       "inputs": {
         "components": [
           1988,
@@ -296,7 +296,7 @@
       "expected": 2447332.0
     },
     {
-      "name": "julian_day_issue_2207_6",
+      "name": "julian_day_issue_2077_6",
       "inputs": {
         "components": [
           1900,
@@ -311,7 +311,7 @@
       "expected": 2415020.5
     },
     {
-      "name": "julian_day_issue_2207_7",
+      "name": "julian_day_issue_2077_7",
       "inputs": {
         "components": [
           1600,
@@ -326,7 +326,7 @@
       "expected": 2305447.5
     },
     {
-      "name": "julian_day_issue_2207_8",
+      "name": "julian_day_issue_2077_8",
       "inputs": {
         "components": [
           1600,
@@ -341,7 +341,7 @@
       "expected": 2305812.5
     },
     {
-      "name": "julian_day_issue_2207_9",
+      "name": "julian_day_issue_2077_9",
       "inputs": {
         "components": [
           837,
@@ -356,7 +356,7 @@
       "expected": 2026871.8
     },
     {
-      "name": "julian_day_issue_2207_10",
+      "name": "julian_day_issue_2077_10",
       "inputs": {
         "components": [
           -123,
@@ -371,7 +371,7 @@
       "expected": 1676496.5
     },
     {
-      "name": "julian_day_issue_2207_11",
+      "name": "julian_day_issue_2077_11",
       "inputs": {
         "components": [
           -122,
@@ -386,7 +386,7 @@
       "expected": 1676497.5
     },
     {
-      "name": "julian_day_issue_2207_12",
+      "name": "julian_day_issue_2077_12",
       "inputs": {
         "components": [
           -1000,
@@ -401,7 +401,7 @@
       "expected": 1356001.0
     },
     {
-      "name": "julian_day_issue_2207_13",
+      "name": "julian_day_issue_2077_13",
       "inputs": {
         "components": [
           -1000,
@@ -416,7 +416,7 @@
       "expected": 1355866.5
     },
     {
-      "name": "julian_day_issue_2207_14",
+      "name": "julian_day_issue_2077_14",
       "inputs": {
         "components": [
           -1001,
@@ -431,7 +431,7 @@
       "expected": 1355671.4
     },
     {
-      "name": "julian_day_issue_2207_15",
+      "name": "julian_day_issue_2077_15",
       "inputs": {
         "components": [
           -4712,

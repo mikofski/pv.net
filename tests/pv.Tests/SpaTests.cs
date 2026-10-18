@@ -177,7 +177,7 @@ public class SpaTests
     [InlineData(-1000, 2, 29, 0, 0, 0, 1355866.5)]
     [InlineData(-1001, 8, 17, 21, 36, 0, 1355671.4)]
     [InlineData(-4712, 1, 1, 12, 0, 0, 0.0)]
-    public void JulianDayIssue2207(
+    public void JulianDayIssue2077(
         int year, int month, int day, int hour, int minute, int second, double expected)
     {
         Assert.Equal(expected, Spa.JulianDayDt(year, month, day, hour, minute, second, 0));
