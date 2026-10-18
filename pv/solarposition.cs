@@ -1,202 +1,193 @@
-﻿using System;
+using System;
 
 namespace pv
 {
-    public class SolarPosition
+    /// <summary>
+    /// Provides stateless analytical solar-position calculations.
+    /// </summary>
+    public static class SolarPosition
     {
-        public readonly string[] Times;
-        public readonly double Latitude, Longitude;
-        public readonly double TimeZone;
-        public readonly int NDays;
-        public readonly DateTime[] DateTimeArray;
-        public readonly int[] DayOfYearArray;
-        public double[] ZenithArray, AzimuthArray;
-
         /// <summary>
-        /// Class that represents the solar positions for a given set of times
-        /// and pair of latitude & longitude coordinates.
+        /// Port of pvlib.solarposition._calculate_simple_day_angle.
         /// </summary>
-        /// <param name="times">an array of strings of naive local times in
-        /// ISO 8601 format, seconds precision (Array of String)</param>
-        /// <param name="latitude">the latitude in degrees (double)</param>
-        /// <param name="longitude">the longitude in degrees (double)</param>
-        /// <param name="timezone">the timezone in hours (double)</param>
-        public SolarPosition(string[] times, double latitude, double longitude, double timezone)
+        /// <param name="dayOfYear">day of year [days] (array of double)</param>
+        /// <param name="offset">day-angle offset [days] (int, default: 1)</param>
+        /// <returns>Earth orbital day angle [radians] (array of double)</returns>
+        /// <exception cref="ArgumentNullException">dayOfYear is null.</exception>
+        public static double[] CalcSimpleDayAngleArray(double[] dayOfYear, int offset = 1)
         {
-            Times = times;
-            Latitude = latitude;
-            Longitude = longitude;
-            TimeZone = timezone;
-            NDays = times.Length;
-            DateTimeArray = TimesToDateTimes();
-            DayOfYearArray = new int[NDays];
-            for (var i = 0; i < NDays; i++ )
-            {
-                DayOfYearArray[i] = DateTimeArray[i].DayOfYear;
-                Console.WriteLine(
-                    $"{DateTimeArray[i]:g} --> {DayOfYearArray[i]:g}[days]");
-            }
-        }
+            ArgumentNullException.ThrowIfNull(dayOfYear);
 
-        /// <summary>
-        /// Convert array of strings of naive local times in ISO 8601 format,
-        /// seconds precision, to an array of DateTime objects.
-        /// </summary>
-        /// <returns>Array of DateTime objects</returns>
-        private DateTime[] TimesToDateTimes()
-        {
-            var dateTimeArray = new DateTime[NDays];
-            const string fmt = "yyyy-MM-ddTHH:mm:ss";
-            for (var i = 0; i < NDays; i++)
+            var dayAngle = new double[dayOfYear.Length];
+            for (var i = 0; i < dayOfYear.Length; i++)
             {
-                dateTimeArray[i] = DateTime.ParseExact(Times[i], fmt,
-                    System.Globalization.CultureInfo.InvariantCulture);
-                Console.WriteLine($"{Times[i]} --> {dateTimeArray[i]:yyyy-MM-ddTHH:mm:ss}");
-            }
-
-            return dateTimeArray;
-        }
-
-        /// <summary>
-        /// Calculate the day angle in radians for the Earth's orbit around the sun.
-        /// For the Spencer method, offset=1; for the ASCE method, offset=0.
-        /// </summary>
-        /// <param name="offset">an offset in days (integer, default: 1)</param>
-        /// <returns>day angles in radians (Array of double)</returns>
-        public double[] CalcSimpleDayAngleArray(int offset = 1)
-        {
-            var dayAngle = new double[NDays];
-            for (var i = 0; i < NDays; i++)
-            {
-                dayAngle[i] = (2.0 * Math.PI / 365.0) * (DayOfYearArray[i] - offset);
-                Console.WriteLine($"{DayOfYearArray[i]:g}[days] --> {dayAngle[i]:f5}[rad]");
+                dayAngle[i] = (2.0 * Math.PI / 365.0) * (dayOfYear[i] - offset);
             }
 
             return dayAngle;
         }
 
         /// <summary>
-        /// Calculate the equation of time according to Spencer (1971). The
-        /// equation of time is the difference in time between solar time and
-        /// mean solar time in minutes.
+        /// Port of pvlib.solarposition.equation_of_time_spencer71.
         /// </summary>
-        /// <param name="dayAngle">day angle in radians (Array of double)</param>
-        /// <returns>equation of time in minutes (Array of double)</returns>
-        public double[] EquationOfTimeSpencer71(double[] dayAngle)
+        /// <param name="dayOfYear">day of year [days] (array of double)</param>
+        /// <returns>equation of time [minutes] (array of double)</returns>
+        /// <exception cref="ArgumentNullException">dayOfYear is null.</exception>
+        public static double[] EquationOfTimeSpencer71(double[] dayOfYear)
         {
-            // convert from radians to minutes per day = 24[h/day] * 60[min/h] / 2 / pi
-            var eot = new double[NDays];
-            for (var i = 0; i < NDays; i++)
+            var dayAngle = CalcSimpleDayAngleArray(dayOfYear);
+            var eot = new double[dayAngle.Length];
+            for (var i = 0; i < dayAngle.Length; i++)
             {
-                eot[i] = (1440.0 / 2 / Math.PI) * (
-                             0.0000075
-                             + 0.001868 * Math.Cos(dayAngle[i])
-                             - 0.032077 * Math.Sin(dayAngle[i])
-                             - 0.014615 * Math.Cos(2.0 * dayAngle[i])
-                             - 0.040849 * Math.Sin(2.0 * dayAngle[i]));
+                eot[i] = (1440.0 / (2.0 * Math.PI)) * (
+                    0.0000075
+                    + 0.001868 * Math.Cos(dayAngle[i])
+                    - 0.032077 * Math.Sin(dayAngle[i])
+                    - 0.014615 * Math.Cos(2.0 * dayAngle[i])
+                    - 0.040849 * Math.Sin(2.0 * dayAngle[i]));
             }
 
             return eot;
         }
 
         /// <summary>
-        /// Calculate the equation of time according to PVCDROM.
+        /// Port of pvlib.solarposition.equation_of_time_pvcdrom.
         /// </summary>
-        /// <param name="bday">day angle in radians relative to Vernal
-        /// Equinox, typically March 22, day number 81 (Array of double)</param>
-        /// <returns>equation of time in minutes (Array of double)</returns>
-        public double[] EquationOfTimePvCdrom(double[] bday)
+        /// <param name="dayOfYear">day of year [days] (array of double)</param>
+        /// <returns>equation of time [minutes] (array of double)</returns>
+        /// <exception cref="ArgumentNullException">dayOfYear is null.</exception>
+        public static double[] EquationOfTimePvCdrom(double[] dayOfYear)
         {
-            var eot = new double[NDays];
-            for (var i = 0; i < NDays; i++)
+            var dayAngle = CalcSimpleDayAngleArray(dayOfYear, offset: 81);
+            var eot = new double[dayAngle.Length];
+            for (var i = 0; i < dayAngle.Length; i++)
             {
-                // same value but about 2x faster than Spencer (1971)
-                eot[i] = 9.87 * Math.Sin(2.0 * bday[i])
-                         - 7.53 * Math.Cos(bday[i])
-                         - 1.5 * Math.Sin(bday[i]);
+                eot[i] = 9.87 * Math.Sin(2.0 * dayAngle[i])
+                         - 7.53 * Math.Cos(dayAngle[i])
+                         - 1.5 * Math.Sin(dayAngle[i]);
             }
 
             return eot;
         }
 
         /// <summary>
-        /// Solar declination from Duffie & Beckman and attributed to
-        /// Spencer(1971) and Iqbal(1983).
+        /// Port of pvlib.solarposition.declination_spencer71.
         /// </summary>
-        /// <param name="dayAngle">day angle in radians (Array of double)</param>
-        /// <returns>declination in radians (Array of doubles)</returns>
-        public double[] DeclinationSpencer71(double[] dayAngle)
+        /// <param name="dayOfYear">day of year [days] (array of double)</param>
+        /// <returns>solar declination [radians] (array of double)</returns>
+        /// <exception cref="ArgumentNullException">dayOfYear is null.</exception>
+        public static double[] DeclinationSpencer71(double[] dayOfYear)
         {
-            var decl = new double[NDays];
-            for (var i = 0; i < NDays; i++)
+            var dayAngle = CalcSimpleDayAngleArray(dayOfYear);
+            var declination = new double[dayAngle.Length];
+            for (var i = 0; i < dayAngle.Length; i++)
             {
-                decl[i] = 0.006918
-                          - 0.399912 * Math.Cos(dayAngle[i])
-                          + 0.070257 * Math.Sin(dayAngle[i])
-                          - 0.006758 * Math.Cos(2.0 * dayAngle[i])
-                          + 0.000907 * Math.Sin(2.0 * dayAngle[i])
-                          - 0.002697 * Math.Cos(3.0 * dayAngle[i])
-                          + 0.00148 * Math.Sin(3.0 * dayAngle[i]);
+                var angle = dayAngle[i];
+                declination[i] = 0.006918
+                    - 0.399912 * Math.Cos(angle)
+                    + 0.070257 * Math.Sin(angle)
+                    - 0.006758 * Math.Cos(2.0 * angle)
+                    + 0.000907 * Math.Sin(2.0 * angle)
+                    - 0.002697 * Math.Cos(3.0 * angle)
+                    + 0.00148 * Math.Sin(3.0 * angle);
             }
 
-            return decl;
+            return declination;
         }
 
         /// <summary>
-        /// Solar declination from Duffie & Beckman and attributed to Cooper (1969).
+        /// Calculates solar declination using the legacy Cooper (1969) day-angle input.
         /// </summary>
-        /// <param name="dayAngle">day angle in radians (Array of double)</param>
-        /// <returns>declination in radians (Array of doubles)</returns>
-        public double[] DeclinationCooper69(double[] dayAngle)
+        /// <param name="dayAngle">day angle [radians] (array of double)</param>
+        /// <returns>solar declination [radians] (array of double)</returns>
+        /// <exception cref="ArgumentNullException">dayAngle is null.</exception>
+        public static double[] DeclinationCooper69(double[] dayAngle)
         {
-            var decl = new double[NDays];
-            for (var i = 0; i < NDays; i++)
+            ArgumentNullException.ThrowIfNull(dayAngle);
+
+            var declination = new double[dayAngle.Length];
+            for (var i = 0; i < dayAngle.Length; i++)
             {
-                decl[i] = Math.PI / 180.0 * (
-                    23.45 * Math.Sin(dayAngle[i] + (2.0 * Math.PI / 365.0) * 285.0));
+                declination[i] = Math.PI / 180.0
+                    * (23.45 * Math.Sin(dayAngle[i] + (2.0 * Math.PI / 365.0) * 285.0));
             }
 
-            return decl;
+            return declination;
         }
 
         /// <summary>
-        /// Hour angle in local solar time. Zero at local solar noon.
+        /// Port of pvlib.solarposition.hour_angle.
         /// </summary>
-        /// <param name="eot">equation of time in minutes (Array of double)</param>
-        /// <returns>hour angle in radians</returns>
-        public double[] HourAngle(double[] eot)
+        /// <param name="location">site coordinates and fixed UTC offset [n/d] (Location)</param>
+        /// <param name="times">timezone-aware timestamps [n/d] (array of DateTimeOffset)</param>
+        /// <param name="equationOfTime">equation of time [minutes] (array of double)</param>
+        /// <returns>solar hour angle [degrees] (array of double)</returns>
+        /// <exception cref="ArgumentNullException">An argument is null.</exception>
+        /// <exception cref="ArgumentException">A timestamp offset differs from the location offset, or array lengths differ.</exception>
+        public static double[] HourAngle(
+            Location location,
+            DateTimeOffset[] times,
+            double[] equationOfTime)
         {
-            var hourAngle = new double[NDays];
-            for (var i = 0; i < NDays; i++)
+            ArgumentNullException.ThrowIfNull(location);
+            ArgumentNullException.ThrowIfNull(times);
+            ArgumentNullException.ThrowIfNull(equationOfTime);
+            if (times.Length != equationOfTime.Length)
             {
-                var hours = DateTimeArray[i].TimeOfDay.TotalHours;
-                Console.WriteLine($"{DateTimeArray[i]:g} --> {hours:g}[hrs]");
-                hourAngle[i] = 15.0 * (hours - TimeZone - 12.0) + Longitude + eot[i] / 4.0;
-                hourAngle[i] *= Math.PI / 180.0;
+                throw new ArgumentException("Times and equationOfTime must have the same length.");
+            }
+
+            var hourAngle = new double[times.Length];
+            for (var i = 0; i < times.Length; i++)
+            {
+                if (times[i].Offset != location.UtcOffset)
+                {
+                    throw new ArgumentException(
+                        "Every timestamp must use the UTC offset specified by location.",
+                        nameof(times));
+                }
+
+                hourAngle[i] = 15.0 * (
+                    times[i].TimeOfDay.TotalHours
+                    - location.UtcOffset.TotalHours
+                    - 12.0)
+                    + location.Longitude
+                    + equationOfTime[i] / 4.0;
             }
 
             return hourAngle;
         }
 
         /// <summary>
-        /// Analytical expression of solar zenith angle based on spherical
-        /// trigonometry.
+        /// Port of pvlib.solarposition.solar_zenith_analytical.
         /// </summary>
-        /// <param name="hourAngle">hour angle in radians (Array of double)</param>
-        /// <param name="declination">declination in radians (Array of double)</param>
-        /// <returns>solar zenith in degrees (Array of double)</returns>
-        public double[] SolarZenith(double[] hourAngle, double[] declination)
+        /// <param name="latitude">latitude, positive north of equator [radians] (double)</param>
+        /// <param name="hourAngle">solar hour angle [radians] (array of double)</param>
+        /// <param name="declination">solar declination [radians] (array of double)</param>
+        /// <returns>solar zenith angle [radians] (array of double)</returns>
+        /// <exception cref="ArgumentNullException">An array argument is null.</exception>
+        /// <exception cref="ArgumentException">Array lengths differ.</exception>
+        public static double[] SolarZenith(
+            double latitude,
+            double[] hourAngle,
+            double[] declination)
         {
-            var ze = new double[NDays];
-            var latRad = Latitude * Math.PI / 180.0;
-            for (var i = 0; i < NDays; i++)
+            ArgumentNullException.ThrowIfNull(hourAngle);
+            ArgumentNullException.ThrowIfNull(declination);
+            if (hourAngle.Length != declination.Length)
             {
-                ze[i] = Math.Acos(
-                    Math.Cos(declination[i]) * Math.Cos(latRad) * Math.Cos(hourAngle[i]) +
-                    Math.Sin(declination[i]) * Math.Sin(latRad))*180.0/Math.PI;
+                throw new ArgumentException("hourAngle and declination must have the same length.");
             }
 
-            return ze;
+            var zenith = new double[hourAngle.Length];
+            for (var i = 0; i < hourAngle.Length; i++)
+            {
+                zenith[i] = Math.Acos(
+                    Math.Cos(declination[i]) * Math.Cos(latitude) * Math.Cos(hourAngle[i])
+                    + Math.Sin(declination[i]) * Math.Sin(latitude));
+            }
+
+            return zenith;
         }
     }
 }
