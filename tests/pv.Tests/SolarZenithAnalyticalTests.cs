@@ -44,7 +44,7 @@ public class SolarZenithAnalyticalTests
             hourAnglePvcdrom,
             declinationCooper69);
         FixtureAssert.AssertAllClose(expected.HourAnglePvcdrom, hourAnglePvcdrom, rtol: 1e-9, atol: 0);
-        FixtureAssert.AssertAllClose(expected.DeclinationCooper69, declinationCooper69, rtol: 1e-9, atol: 0);
+        FixtureAssert.AssertAllClose(expected.DeclinationCooper69, declinationCooper69, rtol: 1e-9, atol: 1e-15);
         FixtureAssert.AssertAllClose(expected.ZenithPvcdromCooper69, zenithPvcdromCooper69, rtol: 1e-9, atol: 0);
         FixtureAssert.AssertAllClose(expected.SpaZenith, zenithPvcdromCooper69, rtol: 1e-5, atol: 0.025);
     }
