@@ -372,7 +372,7 @@ namespace pv
             var enabled = elevation >= -(0.26667 + atmosRefract);
             var correction = (localPressure / 1010 * 283 / (273 + localTemp)) * 1.02
                 / (60 * Math.Tan((elevation + 10.3 / (elevation + 5.11)) * Math.PI / 180));
-            return enabled ? correction : 0;
+            return correction * (enabled ? 1 : 0);
         }
 
         /// <summary>Calculates apparent topocentric elevation. Port of pvlib.spa.topocentric_elevation_angle.</summary>

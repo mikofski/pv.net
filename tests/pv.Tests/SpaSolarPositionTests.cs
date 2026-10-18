@@ -221,6 +221,8 @@ public class SpaSolarPositionTests
         var result = Spa.SolarPosition([double.NaN], 0, 0, 0, 1013.25, 25, 67, 0.5667);
         Assert.True(double.IsNaN(result.ApparentZenith[0]));
         Assert.True(double.IsNaN(Spa.HeliocentricLongitude(double.NaN)));
+        Assert.True(double.IsNaN(Spa.AtmosphericRefractionCorrection(1013.25, 25, double.NaN, 0.5667)));
+        Assert.Equal(0, Spa.AtmosphericRefractionCorrection(1013.25, 25, -10, 0.5667));
         Assert.Throws<ArgumentNullException>(() =>
             Spa.SolarPosition(null!, 0, 0, 0, 1013.25, 25, 67, 0.5667));
         Assert.Throws<ArgumentNullException>(() => Spa.SolarPositionSst(null!, 67));
