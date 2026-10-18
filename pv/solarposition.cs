@@ -188,5 +188,139 @@ namespace pv
 
             return zenith;
         }
+
+        /// <summary>
+        /// Port of pvlib.solarposition.sun_rise_set_transit_geometric. This method assumes a
+        /// circular orbit and a point-source sun, and ignores atmospheric refraction, so errors
+        /// are about 10 minutes.
+        /// </summary>
+        /// <param name="times">timestamps with the local UTC offset of the location [n/d] (array of DateTimeOffset)</param>
+        /// <param name="latitude">latitude, positive north [degrees] (double)</param>
+        /// <param name="longitude">longitude, positive east [degrees] (double)</param>
+        /// <param name="declination">solar declination at times [radians] (array of double)</param>
+        /// <param name="equationOfTime">equation of time [minutes] (array of double)</param>
+        /// <returns>a tuple of local sunrise, sunset and transit times [n/d] (array of DateTimeOffset each)</returns>
+        /// <exception cref="ArgumentNullException">An array argument is null.</exception>
+        /// <exception cref="ArgumentException">Input arrays have different lengths.</exception>
+        public static (DateTimeOffset[] Sunrise, DateTimeOffset[] Sunset, DateTimeOffset[] Transit)
+            SunRiseSetTransitGeometric(
+                DateTimeOffset[] times,
+                double latitude,
+                double longitude,
+                double[] declination,
+                double[] equationOfTime)
+        {
+            ArgumentNullException.ThrowIfNull(times);
+            ArgumentNullException.ThrowIfNull(declination);
+            ArgumentNullException.ThrowIfNull(equationOfTime);
+            if (times.Length != declination.Length || times.Length != equationOfTime.Length)
+            {
+                throw new ArgumentException(
+                    "times, declination, and equationOfTime must have the same length.");
+            }
+
+            var latitudeRadians = latitude * Math.PI / 180.0;
+            var sunriseAngle = new double[times.Length];
+            var sunsetAngle = new double[times.Length];
+            var transitAngle = new double[times.Length];
+            for (var i = 0; i < times.Length; i++)
+            {
+                sunsetAngle[i] = Math.Acos(
+                    -Math.Tan(declination[i]) * Math.Tan(latitudeRadians)) * 180.0 / Math.PI;
+                sunriseAngle[i] = -sunsetAngle[i];
+            }
+
+            return (
+                LocalTimesFromHoursSinceMidnight(
+                    times, HourAngleToHours(times, sunriseAngle, longitude, equationOfTime)),
+                LocalTimesFromHoursSinceMidnight(
+                    times, HourAngleToHours(times, sunsetAngle, longitude, equationOfTime)),
+                LocalTimesFromHoursSinceMidnight(
+                    times, HourAngleToHours(times, transitAngle, longitude, equationOfTime)));
+        }
+
+        /// <summary>
+        /// Converts solar hour angles to hours after local midnight.
+        /// </summary>
+        /// <param name="times">timestamps with the local UTC offset of the location [n/d] (array of DateTimeOffset)</param>
+        /// <param name="hourAngle">solar hour angle [degrees] (array of double)</param>
+        /// <param name="longitude">longitude, positive east [degrees] (double)</param>
+        /// <param name="equationOfTime">equation of time [minutes] (array of double)</param>
+        /// <returns>hours after local midnight [hours] (array of double)</returns>
+        /// <exception cref="ArgumentNullException">An array argument is null.</exception>
+        /// <exception cref="ArgumentException">Input arrays have different lengths.</exception>
+        internal static double[] HourAngleToHours(
+            DateTimeOffset[] times,
+            double[] hourAngle,
+            double longitude,
+            double[] equationOfTime)
+        {
+            ArgumentNullException.ThrowIfNull(times);
+            ArgumentNullException.ThrowIfNull(hourAngle);
+            ArgumentNullException.ThrowIfNull(equationOfTime);
+            if (times.Length != hourAngle.Length || times.Length != equationOfTime.Length)
+            {
+                throw new ArgumentException(
+                    "times, hourAngle, and equationOfTime must have the same length.");
+            }
+
+            var hours = new double[times.Length];
+            for (var i = 0; i < times.Length; i++)
+            {
+                hours[i] = (hourAngle[i] - longitude - equationOfTime[i] / 4.0) / 15.0
+                            + 12.0 + times[i].Offset.TotalHours;
+            }
+
+            return hours;
+        }
+
+        /// <summary>
+        /// Converts hours after local midnight to local timestamps.
+        /// </summary>
+        /// <param name="times">timestamps with the local UTC offset of the location [n/d] (array of DateTimeOffset)</param>
+        /// <param name="hours">hours after local midnight [hours] (array of double)</param>
+        /// <returns>local timestamps [n/d] (array of DateTimeOffset)</returns>
+        /// <exception cref="ArgumentNullException">An array argument is null.</exception>
+        /// <exception cref="ArgumentException">Input arrays have different lengths.</exception>
+        internal static DateTimeOffset[] LocalTimesFromHoursSinceMidnight(
+            DateTimeOffset[] times,
+            double[] hours)
+        {
+            ArgumentNullException.ThrowIfNull(times);
+            ArgumentNullException.ThrowIfNull(hours);
+            if (times.Length != hours.Length)
+            {
+                throw new ArgumentException("times and hours must have the same length.");
+            }
+
+            var localTimes = new DateTimeOffset[times.Length];
+            for (var i = 0; i < times.Length; i++)
+            {
+                var localMidnight = new DateTimeOffset(
+                    times[i].Year, times[i].Month, times[i].Day, 0, 0, 0, times[i].Offset);
+                localTimes[i] = localMidnight.AddHours(hours[i]);
+            }
+
+            return localTimes;
+        }
+
+        /// <summary>
+        /// Converts local timestamps to hours after their local calendar midnight.
+        /// </summary>
+        /// <param name="times">timestamps with the local UTC offset of the location [n/d] (array of DateTimeOffset)</param>
+        /// <returns>hours after local midnight [hours] (array of double)</returns>
+        /// <exception cref="ArgumentNullException">times is null.</exception>
+        internal static double[] TimesToHoursAfterLocalMidnight(DateTimeOffset[] times)
+        {
+            ArgumentNullException.ThrowIfNull(times);
+
+            var hours = new double[times.Length];
+            for (var i = 0; i < times.Length; i++)
+            {
+                hours[i] = times[i].TimeOfDay.TotalHours;
+            }
+
+            return hours;
+        }
     }
 }
