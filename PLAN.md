@@ -287,6 +287,11 @@ own module:
     from the high-level method.
 * Tests go in `tests/pv.Tests/SpaTests.cs` and mirror the `SpaBase` class in
   pvlib's `test_spa.py`, one test per function, using that file's constants.
+* S1's `CalculateDeltaT` provides `(int year, int month)` and aligned
+  `(int[] year, int[] month)` overloads, without NumPy broadcasting. Repeat
+  scalar inputs to match an array when needed. Unlike pvlib's warning, years
+  before -1999 or after 3000 are calculated silently; the XML docs describe
+  this limitation.
 
 ## 6. How agents should work through the backlog
 
