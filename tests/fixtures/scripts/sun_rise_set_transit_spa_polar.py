@@ -26,9 +26,9 @@ def main():
                 "name": name,
                 "inputs": {"timestamp": timestamp, "latitude": 90.0, "longitude": 0.0},
                 "expected": {
-                    "sunrise": timestamp_or_none(event["sunrise"]),
-                    "sunset": timestamp_or_none(event["sunset"]),
-                    "transit": timestamp_or_none(event["transit"]),
+                    "sunrise": [timestamp_or_none(event["sunrise"])],
+                    "sunset": [timestamp_or_none(event["sunset"])],
+                    "transit": [timestamp_or_none(event["transit"])],
                 },
             }
         )

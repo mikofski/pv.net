@@ -23,10 +23,10 @@ public class FixtureLoaderTests
 
         foreach (var testCase in fixture.Cases)
         {
-            Assert.Null(testCase.Expected!.Sunrise);
-            Assert.Null(testCase.Expected.Sunset);
-            Assert.NotNull(testCase.Expected.Transit);
-            Assert.Equal(testCase.Inputs!.Timestamp.Date, testCase.Expected.Transit.Value.Date);
+            Assert.Null(Assert.Single(testCase.Expected!.Sunrise));
+            Assert.Null(Assert.Single(testCase.Expected.Sunset));
+            var transit = Assert.Single(testCase.Expected.Transit);
+            Assert.Equal(testCase.Inputs!.Timestamp.Date, transit.Date);
         }
     }
 
@@ -44,8 +44,8 @@ public class FixtureLoaderTests
 
     public sealed class EventOutput
     {
-        public DateTimeOffset? Sunrise { get; init; }
-        public DateTimeOffset? Sunset { get; init; }
-        public DateTimeOffset? Transit { get; init; }
+        public DateTimeOffset?[] Sunrise { get; init; } = [];
+        public DateTimeOffset?[] Sunset { get; init; } = [];
+        public DateTimeOffset[] Transit { get; init; } = [];
     }
 }

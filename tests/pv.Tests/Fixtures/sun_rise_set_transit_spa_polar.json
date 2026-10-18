@@ -9,9 +9,15 @@
         "longitude": 0.0
       },
       "expected": {
-        "sunrise": null,
-        "sunset": null,
-        "transit": "2024-06-21T12:01:55+00:00"
+        "sunrise": [
+          null
+        ],
+        "sunset": [
+          null
+        ],
+        "transit": [
+          "2024-06-21T12:01:55+00:00"
+        ]
       }
     },
     {
@@ -22,9 +28,15 @@
         "longitude": 0.0
       },
       "expected": {
-        "sunrise": null,
-        "sunset": null,
-        "transit": "2024-12-21T11:58:17+00:00"
+        "sunrise": [
+          null
+        ],
+        "sunset": [
+          null
+        ],
+        "transit": [
+          "2024-12-21T11:58:17+00:00"
+        ]
       }
     }
   ]
