@@ -59,7 +59,7 @@ def main():
         {"year": mix_year_array.tolist(), "month": mix_month_array.tolist()},
         spa.calculate_deltat(year, mix_month_array).tolist())
 
-    issue_2207 = [
+    issue_2077 = [
         (2000, 1, 1, 12, 0, 0), (1999, 1, 1, 0, 0, 0),
         (1987, 1, 27, 0, 0, 0), (1987, 6, 19, 12, 0, 0),
         (1988, 1, 27, 0, 0, 0), (1988, 6, 19, 12, 0, 0),
@@ -69,9 +69,9 @@ def main():
         (-1000, 7, 12, 12, 0, 0), (-1000, 2, 29, 0, 0, 0),
         (-1001, 8, 17, 21, 36, 0), (-4712, 1, 1, 12, 0, 0),
     ]
-    for index, values in enumerate(issue_2207):
+    for index, values in enumerate(issue_2077):
         components = [*values, 0]
-        add(f"julian_day_issue_2207_{index}", {"components": components},
+        add(f"julian_day_issue_2077_{index}", {"components": components},
             spa.julian_day_dt(*components))
 
     for name, components in [
