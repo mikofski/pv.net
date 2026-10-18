@@ -1,60 +1,66 @@
+#nullable enable
 using System;
 
 namespace pv
 {
     /// <summary>
-    /// Contains solar position values for a sequence of times.
+    /// Contains aligned solar position values for one batch of times.
     /// </summary>
+    /// <remarks>
+    /// Every populated output array aligns by index with <see cref="Times"/> and has the same length.
+    /// High-level calculations return a new result and newly allocated output arrays; callers may mutate
+    /// those arrays without affecting later calculations. Optional outputs are null when not requested.
+    /// </remarks>
     public class SolarPositionResult
     {
         /// <summary>
-        /// Times associated with the solar position, in n/d (array of DateTimeOffset).
+        /// Input timestamps in their supplied fixed UTC offset [n/d] (array of DateTimeOffset).
         /// </summary>
         public DateTimeOffset[] Times { get; init; } = Array.Empty<DateTimeOffset>();
 
         /// <summary>
-        /// Solar zenith angles, in degrees (array of double).
+        /// Solar zenith without atmospheric refraction [degrees] (array of double).
         /// </summary>
         public double[] Zenith { get; init; } = Array.Empty<double>();
 
         /// <summary>
-        /// Refraction-corrected solar zenith angles, in degrees (array of double).
+        /// Solar zenith including atmospheric refraction [degrees] (array of double).
         /// </summary>
         public double[] ApparentZenith { get; init; } = Array.Empty<double>();
 
         /// <summary>
-        /// Solar elevation angles without refraction correction, in degrees (array of double).
+        /// Solar elevation without atmospheric refraction [degrees] (array of double).
         /// </summary>
         public double[] Elevation { get; init; } = Array.Empty<double>();
 
         /// <summary>
-        /// Refraction-corrected solar elevation angles, in degrees (array of double).
+        /// Solar elevation including atmospheric refraction [degrees] (array of double).
         /// </summary>
         public double[] ApparentElevation { get; init; } = Array.Empty<double>();
 
         /// <summary>
-        /// Solar azimuth angles, in degrees (array of double).
+        /// Solar azimuth [degrees] (array of double).
         /// </summary>
         public double[] Azimuth { get; init; } = Array.Empty<double>();
 
         /// <summary>
-        /// Solar declination angles, in degrees (array of double).
+        /// Solar declination [degrees] (array of double).
         /// </summary>
         public double[] Declination { get; init; } = Array.Empty<double>();
 
         /// <summary>
-        /// Solar hour angles, in degrees (array of double).
+        /// Solar hour angle [degrees] (array of double).
         /// </summary>
         public double[] HourAngle { get; init; } = Array.Empty<double>();
 
         /// <summary>
-        /// Equation of time, in minutes (array of double); null if not calculated.
+        /// Equation of time [minutes] (array of double); null if not calculated.
         /// </summary>
-        public double[] EquationOfTime { get; init; }
+        public double[]? EquationOfTime { get; init; }
 
         /// <summary>
-        /// Local solar time, in hours (array of double); null if not calculated.
+        /// Local solar time [hours] (array of double); null if not calculated.
         /// </summary>
-        public double[] SolarTime { get; init; }
+        public double[]? SolarTime { get; init; }
     }
 }

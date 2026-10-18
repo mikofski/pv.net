@@ -81,7 +81,8 @@ planning/issues; it must not drive the library API in this backlog.
    * Ports of `pvlib.atmosphere` go in a new file `pv/atmosphere.cs`, class
      `public static class pv.Atmosphere`.
 2. **Location inputs, stateless calculations.** Introduce `pv.Location` for
-   shared site inputs: latitude, longitude, altitude, and a fixed UTC offset.
+   shared site inputs: latitude, longitude, altitude, a fixed UTC offset, and
+   an optional name.
    It holds no timestamps, calculated arrays, or last-result state.
    High-level `public static` methods on `SolarPosition` accept a `Location`,
    explicit `DateTimeOffset[]` timestamps, and per-call calculation options.
@@ -314,7 +315,7 @@ numbers.
 | ID | Issue | Work item | Depends on | Done |
 |---|---|---|---|---|
 | P0 | [#1](https://github.com/mikofski/pv.net/issues/1) | Test infrastructure: xUnit project, fixture pipeline, retarget to `net8.0`, shared result classes | – | [x] |
-| P1 | [#16](https://github.com/mikofski/pv.net/issues/16) | `Location` API transition, stateless calculation boundaries, silent library, result-contract reconciliation (section 8) | P0 | [ ] |
+| P1 | [#16](https://github.com/mikofski/pv.net/issues/16) | `Location` API transition, stateless calculation boundaries, silent library, result-contract reconciliation (section 8) | P0 | [x] |
 | S1 | [#2](https://github.com/mikofski/pv.net/issues/2) | `Spa`: Julian day/century/millennium functions and `calculate_deltat` | P0 | [ ] |
 | S2 | [#3](https://github.com/mikofski/pv.net/issues/3) | `Spa`: solar position chain, from heliocentric terms to `equation_of_time` and `solar_position` | S1 | [ ] |
 | S3 | [#4](https://github.com/mikofski/pv.net/issues/4) | `Spa`: `transit_sunrise_sunset` and `earthsun_distance` | S2 | [ ] |
@@ -354,18 +355,25 @@ numbers.
 
 ## 8. Existing methods and P1 transition
 
-This is a documentation-only planning update; no runtime migration is made
-here. P1 is the follow-on coding work package, after P0 and before the
-high-level feature ports that consume its contracts. Standalone numerical
-work (S1–S3, A1, F1) does not wait for a façade redesign.
+P1 is the follow-on coding work package, after P0 and before the high-level
+feature ports that consume its contracts. Standalone numerical work (S1–S3,
+A1, F1) does not wait for a façade redesign.
 
 P1 acceptance criteria:
 
 * Add `Location` and explicit high-level signature contracts per section 3,
   retaining stateless numerical helpers and keeping timestamps/options per call.
+  **Decision:** construct `Location(latitude, longitude, altitude, utcOffset, name = null)`,
+  with the optional `name` retained as site metadata;
+  require finite latitude and longitude within [-90, 90] and [-180, 180]
+  degrees, finite altitude in meters, and a whole-minute `TimeSpan` offset
+  within ±14 hours. High-level methods take `Location` first, then
+  `DateTimeOffset[] times`, then method-specific options.
 * Reconcile P0's actual result classes with section 3 before high-level ports
   begin, including apparent/non-apparent fields, optional-output semantics,
-  aligned array lengths, and a documented array ownership policy.
+  aligned array lengths, and a documented array ownership policy. Populated
+  arrays align by input index; each calculation returns newly allocated output
+  arrays, and callers may mutate them without changing subsequent calculations.
 * Retire the unused mutable `ZenithArray`/`AzimuthArray` placeholders rather
   than keeping duplicate result state or replacing them with an array of
   batch results. Document direct caller migration; no deprecation machinery
@@ -384,8 +392,8 @@ Known differences to account for in that transition:
   `solar_zenith_analytical` returns **radians**.
 * `SolarPosition.HourAngle` returns **radians**, while pvlib's `hour_angle`
   returns **degrees**. It also uses one fixed timezone offset.
-* The existing Spencer and PVCDROM methods take a day angle instead of
-  `dayofyear`, and use instance state.
+* The legacy Spencer, PVCDROM, and Cooper declination/equation-of-time methods
+  took day angles instead of `dayofyear`, and used instance state.
 * Their XML docs don't yet follow the `[UNITS] (TYPE, default)` format in
   section 4.1.
 
@@ -396,16 +404,29 @@ than retaining the degrees contract through a compatibility shim. P1 must also
 change the existing `HourAngle` API from radians to degrees to match pvlib's
 `hour_angle` contract. This is an intentional breaking change: update affected
 callers and tests together rather than retaining the radians contract through a
-compatibility shim. Migrate `EquationOfTimeSpencer71`,
-`EquationOfTimePvCdrom`, and `DeclinationSpencer71` to accept day-of-year arrays
-and calculate their day angles internally, as pvlib does. The reusable
+compatibility shim. `SolarZenith` keeps the legacy hour-angle/declination
+array units (radians), takes latitude in radians to match pvlib, and changes its
+output unit to radians.
+`HourAngle` takes a `Location`, timestamp array, and equation-of-time array;
+every timestamp must use the location's fixed offset. Migrate
+`EquationOfTimeSpencer71`, `EquationOfTimePvCdrom`, and `DeclinationSpencer71`
+and `DeclinationCooper69` accept day-of-year arrays and calculate their day
+angles internally, as pvlib does. The reusable
 `CalcSimpleDayAngleArray(dayOfYear, offset = 1)` helper uses
 `2π / 365 * (dayOfYear - offset)`: use offset 1 for Spencer methods and offset
-81 for PVCDROM. Do not pass precomputed day angles to these analytical methods
-or preserve the old signatures through compatibility shims. This settles the
-day-angle migration for these methods; any other affected signature remains an
-explicit P1 design question. Unrelated legacy cleanup does not block the
-independent numerical work above.
+81 for PVCDROM, and offset -284 for Cooper (1969). Do not pass precomputed day
+angles to these analytical methods or preserve old signatures through
+compatibility shims. The Cooper offset uses the equivalent
+`(dayOfYear + 284) * 2π / 365` form described in
+[pvlib issue #2902](https://github.com/pvlib/pvlib-python/issues/2902).
+Unrelated legacy cleanup does not block the independent numerical work above.
+
+Approved differences from pvlib v0.16.1 for this transition:
+
+* pv.net uses one explicit fixed `TimeSpan` UTC offset and `DateTimeOffset[]`,
+  not named timezone/DST behavior or pandas timestamps.
+* The previous instance constructor and methods are removed without
+  compatibility shims; callers migrate to static array helpers and `Location`.
 
 ### 8.1 Daily-event semantics and approved missing-event representation
 
@@ -434,7 +455,7 @@ contract in the result XML docs, map fixture JSON `null` to nullable entries,
 and cover polar cases in tests. Evaluate each event independently; a missing
 sunrise or sunset does not invalidate the calculated transit.
 
-**Open decision (P1):** specify final `Location` construction/validation and
-high-level parameter order, and settle day-angle/day-of-year migration before
-changing the affected signatures. All ModelChain-specific architectural
-decisions remain deferred, not implicit requirements of P1.
+**P1 decision:** use the `Location` constructor/validation and high-level
+parameter order specified above before changing signatures. All ModelChain-
+specific architectural decisions remain deferred, not implicit requirements
+of P1.

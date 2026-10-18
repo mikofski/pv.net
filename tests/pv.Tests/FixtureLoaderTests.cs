@@ -15,8 +15,37 @@ public class FixtureLoaderTests
         Assert.True(double.IsNaN(testCase.Expected[1]));
     }
 
+    [Fact]
+    public void LoadsPolarEventsAsNullAndPreservesTransit()
+    {
+        var fixture = FixtureLoader.Load<EventInput, EventOutput>("sun_rise_set_transit_spa_polar.json");
+        Assert.Equal(2, fixture.Cases.Count);
+
+        foreach (var testCase in fixture.Cases)
+        {
+            Assert.Null(Assert.Single(testCase.Expected!.Sunrise));
+            Assert.Null(Assert.Single(testCase.Expected.Sunset));
+            var transit = Assert.Single(testCase.Expected.Transit);
+            Assert.Equal(testCase.Inputs!.Timestamp.Date, transit.Date);
+        }
+    }
+
     public sealed class DateInput
     {
         public DateTimeOffset Timestamp { get; init; }
+    }
+
+    public sealed class EventInput
+    {
+        public DateTimeOffset Timestamp { get; init; }
+        public double Latitude { get; init; }
+        public double Longitude { get; init; }
+    }
+
+    public sealed class EventOutput
+    {
+        public DateTimeOffset?[] Sunrise { get; init; } = [];
+        public DateTimeOffset?[] Sunset { get; init; } = [];
+        public DateTimeOffset[] Transit { get; init; } = [];
     }
 }

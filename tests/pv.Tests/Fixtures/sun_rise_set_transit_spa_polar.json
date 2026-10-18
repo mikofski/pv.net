@@ -1,0 +1,43 @@
+{
+  "pvlib_version": "0.16.1",
+  "cases": [
+    {
+      "name": "polar_day",
+      "inputs": {
+        "timestamp": "2024-06-21T12:00:00+00:00",
+        "latitude": 90.0,
+        "longitude": 0.0
+      },
+      "expected": {
+        "sunrise": [
+          null
+        ],
+        "sunset": [
+          null
+        ],
+        "transit": [
+          "2024-06-21T12:01:55+00:00"
+        ]
+      }
+    },
+    {
+      "name": "polar_night",
+      "inputs": {
+        "timestamp": "2024-12-21T12:00:00+00:00",
+        "latitude": 90.0,
+        "longitude": 0.0
+      },
+      "expected": {
+        "sunrise": [
+          null
+        ],
+        "sunset": [
+          null
+        ],
+        "transit": [
+          "2024-12-21T11:58:17+00:00"
+        ]
+      }
+    }
+  ]
+}

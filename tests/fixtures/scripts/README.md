@@ -14,4 +14,15 @@ From the repository root, regenerate the Spencer (1971) equation-of-time fixture
 python tests/fixtures/scripts/equation_of_time_spencer71.py
 ```
 
-The script writes `tests/pv.Tests/Fixtures/equation_of_time_spencer71.json`.
+The scripts write fixtures under `tests/pv.Tests/Fixtures/`:
+
+```sh
+python tests/fixtures/scripts/equation_of_time_spencer71.py
+python tests/fixtures/scripts/solarposition_analytical.py
+python tests/fixtures/scripts/sun_rise_set_transit_spa_polar.py
+```
+
+`solarposition_analytical.py` covers leap-year day-of-year values and
+non-hourly timestamps with a fixed UTC offset.
+`sun_rise_set_transit_spa_polar.py` captures nullable sunrise/sunset events
+with independently calculated transit times.
