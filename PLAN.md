@@ -324,7 +324,7 @@ numbers.
 | S1 | [#2](https://github.com/mikofski/pv.net/issues/2) | `Spa`: Julian day/century/millennium functions and `calculate_deltat` | P0 | [x] |
 | S2 | [#3](https://github.com/mikofski/pv.net/issues/3) | `Spa`: solar position chain, from heliocentric terms to `equation_of_time` and `solar_position` | S1 | [x] |
 | S3 | [#4](https://github.com/mikofski/pv.net/issues/4) | `Spa`: `transit_sunrise_sunset` and `earthsun_distance` | S2 | [ ] |
-| A1 | [#7](https://github.com/mikofski/pv.net/issues/7) | `Atmosphere`: `pres2alt` and `alt2pres` (needed by `get_solarposition`) | P0 | [ ] |
+| A1 | [#7](https://github.com/mikofski/pv.net/issues/7) | `Atmosphere`: `pres2alt` and `alt2pres` (needed by `get_solarposition`) | P0 | [x] |
 | F1 | [#6](https://github.com/mikofski/pv.net/issues/6) | `solar_azimuth_analytical` | P0 | [ ] |
 | F2 | [#5](https://github.com/mikofski/pv.net/issues/5) | `sun_rise_set_transit_geometric` and its three private helpers | P1 | [ ] |
 | F3 | [#8](https://github.com/mikofski/pv.net/issues/8) | `ephemeris` | P1 | [ ] |
