@@ -309,21 +309,20 @@ namespace pv
         /// circular orbit and a point-source sun, and ignores atmospheric refraction, so errors
         /// are about 10 minutes.
         /// </summary>
+        /// <param name="location">site coordinates and fixed UTC offset [n/d] (Location)</param>
         /// <param name="times">timestamps with the local UTC offset of the location [n/d] (array of DateTimeOffset)</param>
-        /// <param name="latitude">latitude, positive north [degrees] (double)</param>
-        /// <param name="longitude">longitude, positive east [degrees] (double)</param>
         /// <param name="declination">solar declination at times [radians] (array of double)</param>
         /// <param name="equationOfTime">equation of time [minutes] (array of double)</param>
         /// <returns>local sunrise, sunset and transit times [n/d]; sunrise and sunset are null when they do not occur</returns>
-        /// <exception cref="ArgumentNullException">An array argument is null.</exception>
-        /// <exception cref="ArgumentException">Input arrays have different lengths.</exception>
+        /// <exception cref="ArgumentNullException">An argument is null.</exception>
+        /// <exception cref="ArgumentException">Input arrays have different lengths, or a timestamp offset differs from the location offset.</exception>
         public static SunRiseSetTransitResult SunRiseSetTransitGeometric(
+            Location location,
             DateTimeOffset[] times,
-            double latitude,
-            double longitude,
             double[] declination,
             double[] equationOfTime)
         {
+            ArgumentNullException.ThrowIfNull(location);
             ArgumentNullException.ThrowIfNull(times);
             ArgumentNullException.ThrowIfNull(declination);
             ArgumentNullException.ThrowIfNull(equationOfTime);
@@ -333,7 +332,7 @@ namespace pv
                     "times, declination, and equationOfTime must have the same length.");
             }
 
-            var latitudeRadians = latitude * Math.PI / 180.0;
+            var latitudeRadians = location.Latitude * Math.PI / 180.0;
             var sunriseAngle = new double[times.Length];
             var sunsetAngle = new double[times.Length];
             var transitAngle = new double[times.Length];
@@ -341,6 +340,13 @@ namespace pv
             var eventCount = 0;
             for (var i = 0; i < times.Length; i++)
             {
+                if (times[i].Offset != location.UtcOffset)
+                {
+                    throw new ArgumentException(
+                        "Every timestamp must use the UTC offset specified by location.",
+                        nameof(times));
+                }
+
                 var cosineHourAngle =
                     -Math.Tan(declination[i]) * Math.Tan(latitudeRadians);
                 if (cosineHourAngle >= -1.0 && cosineHourAngle <= 1.0)
@@ -363,11 +369,11 @@ namespace pv
             var sunriseTimes = LocalTimesFromHoursSinceMidnight(
                 eventTimes,
                 HourAngleToHours(
-                    eventTimes, sunriseAngle[..eventCount], longitude, eventEquationOfTime));
+                    eventTimes, sunriseAngle[..eventCount], location.Longitude, eventEquationOfTime));
             var sunsetTimes = LocalTimesFromHoursSinceMidnight(
                 eventTimes,
                 HourAngleToHours(
-                    eventTimes, sunsetAngle[..eventCount], longitude, eventEquationOfTime));
+                    eventTimes, sunsetAngle[..eventCount], location.Longitude, eventEquationOfTime));
             var sunrise = new DateTimeOffset?[times.Length];
             var sunset = new DateTimeOffset?[times.Length];
             for (var i = 0; i < eventCount; i++)
@@ -382,7 +388,7 @@ namespace pv
                 Sunrise = sunrise,
                 Sunset = sunset,
                 Transit = LocalTimesFromHoursSinceMidnight(
-                    times, HourAngleToHours(times, transitAngle, longitude, equationOfTime))
+                    times, HourAngleToHours(times, transitAngle, location.Longitude, equationOfTime))
             };
         }
 

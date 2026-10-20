@@ -138,8 +138,9 @@ public class SolarPositionTests
             rtol: 1e-9,
             atol: 0);
 
+        var location = new Location(inputs.Latitude, inputs.Longitude, 0, times[0].Offset);
         var events = SolarPosition.SunRiseSetTransitGeometric(
-            times, inputs.Latitude, inputs.Longitude, inputs.Declination, inputs.EquationOfTime);
+            location, times, inputs.Declination, inputs.EquationOfTime);
         Assert.All(events.Sunrise, time => Assert.NotNull(time));
         Assert.All(events.Sunset, time => Assert.NotNull(time));
         FixtureAssert.AssertTimesClose(
@@ -182,10 +183,11 @@ public class SolarPositionTests
         var testCase = LoadCase(name);
         var inputs = testCase.Inputs!;
         var expected = testCase.Expected!;
+        var location = new Location(
+            inputs.Latitude, inputs.Longitude, 0, inputs.Times[0].Offset);
         var events = SolarPosition.SunRiseSetTransitGeometric(
+            location,
             inputs.Times,
-            inputs.Latitude,
-            inputs.Longitude,
             inputs.Declination,
             inputs.EquationOfTime);
 
@@ -208,8 +210,9 @@ public class SolarPositionTests
             new(2024, 3, 20, 0, 0, 0, TimeSpan.Zero)
         ];
 
+        var location = new Location(70, 0, 0, TimeSpan.Zero);
         var events = SolarPosition.SunRiseSetTransitGeometric(
-            times, 70, 0, [0.4, -0.4, 0], [0, 0, 0]);
+            location, times, [0.4, -0.4, 0], [0, 0, 0]);
 
         Assert.Equal(times, events.Times);
         Assert.Null(events.Sunrise[0]);
@@ -250,13 +253,26 @@ public class SolarPositionTests
     public void SunRiseSetTransitGeometricValidatesArrayLengths()
     {
         var times = new[] { new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero) };
+        var location = new Location(0, 0, 0, TimeSpan.Zero);
 
         Assert.Throws<ArgumentException>(() =>
-            SolarPosition.SunRiseSetTransitGeometric(times, 0, 0, [], [0]));
+            SolarPosition.SunRiseSetTransitGeometric(location, times, [], [0]));
         Assert.Throws<ArgumentException>(() =>
             SolarPosition.HourAngleToHours(times, [], 0, [0]));
         Assert.Throws<ArgumentException>(() =>
             SolarPosition.LocalTimesFromHoursSinceMidnight(times, []));
+    }
+
+    [Fact]
+    public void SunRiseSetTransitGeometricRequiresLocationOffset()
+    {
+        var location = new Location(0, 0, 0, TimeSpan.FromHours(-5));
+        var times = new[] { new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero) };
+
+        var exception = Assert.Throws<ArgumentException>(() =>
+            SolarPosition.SunRiseSetTransitGeometric(location, times, [0], [0]));
+
+        Assert.Equal("times", exception.ParamName);
     }
 
     [Fact]
