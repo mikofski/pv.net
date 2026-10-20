@@ -188,5 +188,120 @@ namespace pv
 
             return zenith;
         }
+
+        /// <summary>
+        /// Calculates analytical solar azimuth from spherical trigonometry (Duffie &amp; Beckman).
+        /// Port of pvlib.solarposition.solar_azimuth_analytical.
+        /// </summary>
+        /// <param name="latitude">latitude of location [radians] (array of double)</param>
+        /// <param name="hourAngle">hour angle in local solar time [radians] (array of double)</param>
+        /// <param name="declination">solar declination [radians] (array of double)</param>
+        /// <param name="zenith">solar zenith angle [radians] (array of double)</param>
+        /// <returns>solar azimuth angle, east of north [radians] (array of double)</returns>
+        /// <exception cref="ArgumentNullException">An array argument is null.</exception>
+        /// <exception cref="ArgumentException">Array lengths differ.</exception>
+        public static double[] SolarAzimuthAnalytical(
+            double[] latitude,
+            double[] hourAngle,
+            double[] declination,
+            double[] zenith)
+        {
+            ArgumentNullException.ThrowIfNull(latitude);
+            ArgumentNullException.ThrowIfNull(hourAngle);
+            ArgumentNullException.ThrowIfNull(declination);
+            ArgumentNullException.ThrowIfNull(zenith);
+            if (latitude.Length != hourAngle.Length
+                || latitude.Length != declination.Length
+                || latitude.Length != zenith.Length)
+            {
+                throw new ArgumentException("All input arrays must have the same length.");
+            }
+
+            var azimuth = new double[latitude.Length];
+            for (var i = 0; i < azimuth.Length; i++)
+            {
+                azimuth[i] = CalculateSolarAzimuthAnalytical(
+                    latitude[i], hourAngle[i], declination[i], zenith[i]);
+            }
+
+            return azimuth;
+        }
+
+        /// <summary>
+        /// Calculates analytical solar azimuth from spherical trigonometry (Duffie &amp; Beckman).
+        /// Port of pvlib.solarposition.solar_azimuth_analytical.
+        /// </summary>
+        /// <param name="latitude">latitude of location [radians] (double)</param>
+        /// <param name="hourAngle">hour angle in local solar time [radians] (array of double)</param>
+        /// <param name="declination">solar declination [radians] (array of double)</param>
+        /// <param name="zenith">solar zenith angle [radians] (array of double)</param>
+        /// <returns>solar azimuth angle, east of north [radians] (array of double)</returns>
+        /// <exception cref="ArgumentNullException">An array argument is null.</exception>
+        /// <exception cref="ArgumentException">Array lengths differ.</exception>
+        public static double[] SolarAzimuthAnalytical(
+            double latitude,
+            double[] hourAngle,
+            double[] declination,
+            double[] zenith)
+        {
+            ArgumentNullException.ThrowIfNull(hourAngle);
+            ArgumentNullException.ThrowIfNull(declination);
+            ArgumentNullException.ThrowIfNull(zenith);
+            if (hourAngle.Length != declination.Length
+                || hourAngle.Length != zenith.Length)
+            {
+                throw new ArgumentException("All input arrays must have the same length.");
+            }
+
+            var azimuth = new double[hourAngle.Length];
+            for (var i = 0; i < azimuth.Length; i++)
+            {
+                azimuth[i] = CalculateSolarAzimuthAnalytical(
+                    latitude, hourAngle[i], declination[i], zenith[i]);
+            }
+
+            return azimuth;
+        }
+
+        /// <summary>
+        /// Calculates analytical solar azimuth for a single set of angles.
+        /// </summary>
+        /// <param name="latitude">latitude of location [radians] (double)</param>
+        /// <param name="hourAngle">hour angle in local solar time [radians] (double)</param>
+        /// <param name="declination">solar declination [radians] (double)</param>
+        /// <param name="zenith">solar zenith angle [radians] (double)</param>
+        /// <returns>solar azimuth angle, east of north [radians] (double)</returns>
+        private static double CalculateSolarAzimuthAnalytical(
+            double latitude,
+            double hourAngle,
+            double declination,
+            double zenith)
+        {
+            var numerator = Math.Cos(zenith) * Math.Sin(latitude) - Math.Sin(declination);
+            var denominator = Math.Sin(zenith) * Math.Cos(latitude);
+            var cosineAzimuth = numerator / denominator;
+
+            if (Math.Abs(denominator) <= 1e-8)
+            {
+                cosineAzimuth = 1.0;
+            }
+
+            if (Math.Abs(cosineAzimuth - 1.0) <= 1e-8)
+            {
+                cosineAzimuth = 1.0;
+            }
+
+            if (Math.Abs(cosineAzimuth + 1.0) <= 1e-8)
+            {
+                cosineAzimuth = -1.0;
+            }
+
+            if (double.IsNaN(hourAngle))
+            {
+                return double.NaN;
+            }
+
+            return Math.Sign(hourAngle) * Math.Acos(cosineAzimuth) + Math.PI;
+        }
     }
 }
