@@ -138,14 +138,18 @@ public class SolarPositionTests
             rtol: 1e-9,
             atol: 0);
 
-        var (sunrise, sunset, transit) = SolarPosition.SunRiseSetTransitGeometric(
+        var events = SolarPosition.SunRiseSetTransitGeometric(
             times, inputs.Latitude, inputs.Longitude, inputs.Declination, inputs.EquationOfTime);
-        FixtureAssert.AssertTimesClose(expected.Sunrise, sunrise, toleranceSeconds: 1);
-        FixtureAssert.AssertTimesClose(expected.Sunset, sunset, toleranceSeconds: 1);
-        FixtureAssert.AssertTimesClose(expected.Transit, transit, toleranceSeconds: 1);
-        Assert.All(sunrise, time => Assert.Equal(times[0].Offset, time.Offset));
-        Assert.All(sunset, time => Assert.Equal(times[0].Offset, time.Offset));
-        Assert.All(transit, time => Assert.Equal(times[0].Offset, time.Offset));
+        Assert.All(events.Sunrise, time => Assert.NotNull(time));
+        Assert.All(events.Sunset, time => Assert.NotNull(time));
+        FixtureAssert.AssertTimesClose(
+            expected.Sunrise, events.Sunrise.Select(time => time!.Value).ToArray(), toleranceSeconds: 1);
+        FixtureAssert.AssertTimesClose(
+            expected.Sunset, events.Sunset.Select(time => time!.Value).ToArray(), toleranceSeconds: 1);
+        FixtureAssert.AssertTimesClose(expected.Transit, events.Transit, toleranceSeconds: 1);
+        Assert.All(events.Sunrise, time => Assert.Equal(times[0].Offset, time!.Value.Offset));
+        Assert.All(events.Sunset, time => Assert.Equal(times[0].Offset, time!.Value.Offset));
+        Assert.All(events.Transit, time => Assert.Equal(times[0].Offset, time.Offset));
 
         var sunriseSpaHours = SolarPosition.TimesToHoursAfterLocalMidnight(
             expected.PublishedSpa.Sunrise);
@@ -155,17 +159,17 @@ public class SolarPositionTests
             expected.PublishedSpa.Transit);
         FixtureAssert.AssertAllClose(
             sunriseSpaHours,
-            TruncatedToMicrosecondHours(sunrise),
+            TruncatedToMicrosecondHours(events.Sunrise.Select(time => time!.Value).ToArray()),
             rtol: 0,
             atol: 0.07910089555555544);
         FixtureAssert.AssertAllClose(
             sunsetSpaHours,
-            TruncatedToMicrosecondHours(sunset),
+            TruncatedToMicrosecondHours(events.Sunset.Select(time => time!.Value).ToArray()),
             rtol: 0,
             atol: 0.1036246955555562);
         FixtureAssert.AssertAllClose(
             transitSpaHours,
-            TruncatedToMicrosecondHours(transit),
+            TruncatedToMicrosecondHours(events.Transit),
             rtol: 0,
             atol: 0.011150788888889096);
     }
@@ -178,19 +182,43 @@ public class SolarPositionTests
         var testCase = LoadCase(name);
         var inputs = testCase.Inputs!;
         var expected = testCase.Expected!;
-        var (sunrise, sunset, transit) = SolarPosition.SunRiseSetTransitGeometric(
+        var events = SolarPosition.SunRiseSetTransitGeometric(
             inputs.Times,
             inputs.Latitude,
             inputs.Longitude,
             inputs.Declination,
             inputs.EquationOfTime);
 
-        AssertRepeatedEvent(expected.Ns.Sunrise[0], sunrise);
-        AssertRepeatedEvent(expected.Ns.Sunset[0], sunset);
-        AssertRepeatedEvent(expected.Ns.Transit[0], transit);
+        AssertRepeatedEvent(expected.Ns.Sunrise[0], events.Sunrise);
+        AssertRepeatedEvent(expected.Ns.Sunset[0], events.Sunset);
+        Assert.All(events.Transit, time =>
+            FixtureAssert.AssertTimesClose([expected.Ns.Transit[0]], [time], 1));
         Assert.Equal(expected.Ns.Sunrise, expected.Us.Sunrise);
         Assert.Equal(expected.Ns.Sunset, expected.Us.Sunset);
         Assert.Equal(expected.Ns.Transit, expected.Us.Transit);
+    }
+
+    [Fact]
+    public void SunRiseSetTransitGeometricPreservesTransitForPolarDayAndNight()
+    {
+        DateTimeOffset[] times =
+        [
+            new(2024, 6, 20, 0, 0, 0, TimeSpan.Zero),
+            new(2024, 12, 20, 0, 0, 0, TimeSpan.Zero),
+            new(2024, 3, 20, 0, 0, 0, TimeSpan.Zero)
+        ];
+
+        var events = SolarPosition.SunRiseSetTransitGeometric(
+            times, 70, 0, [0.4, -0.4, 0], [0, 0, 0]);
+
+        Assert.Equal(times, events.Times);
+        Assert.Null(events.Sunrise[0]);
+        Assert.Null(events.Sunset[0]);
+        Assert.Null(events.Sunrise[1]);
+        Assert.Null(events.Sunset[1]);
+        Assert.NotNull(events.Sunrise[2]);
+        Assert.NotNull(events.Sunset[2]);
+        Assert.Equal(times.Select(time => time.Date), events.Transit.Select(time => time.Date));
     }
 
     [Fact]
@@ -260,10 +288,14 @@ public class SolarPositionTests
         return Assert.Single(fixture.Cases, testCase => testCase.Name == name);
     }
 
-    private static void AssertRepeatedEvent(DateTimeOffset expected, DateTimeOffset[] actual)
+    private static void AssertRepeatedEvent(DateTimeOffset expected, DateTimeOffset?[] actual)
     {
         Assert.NotEmpty(actual);
-        Assert.All(actual, time => FixtureAssert.AssertTimesClose([expected], [time], 1));
+        Assert.All(actual, time =>
+        {
+            Assert.NotNull(time);
+            FixtureAssert.AssertTimesClose([expected], [time.Value], 1);
+        });
     }
 
     private static double[] TruncatedToMicrosecondHours(DateTimeOffset[] times) =>

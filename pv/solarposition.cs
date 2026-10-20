@@ -314,16 +314,15 @@ namespace pv
         /// <param name="longitude">longitude, positive east [degrees] (double)</param>
         /// <param name="declination">solar declination at times [radians] (array of double)</param>
         /// <param name="equationOfTime">equation of time [minutes] (array of double)</param>
-        /// <returns>a tuple of local sunrise, sunset and transit times [n/d] (array of DateTimeOffset each)</returns>
+        /// <returns>local sunrise, sunset and transit times [n/d]; sunrise and sunset are null when they do not occur</returns>
         /// <exception cref="ArgumentNullException">An array argument is null.</exception>
         /// <exception cref="ArgumentException">Input arrays have different lengths.</exception>
-        public static (DateTimeOffset[] Sunrise, DateTimeOffset[] Sunset, DateTimeOffset[] Transit)
-            SunRiseSetTransitGeometric(
-                DateTimeOffset[] times,
-                double latitude,
-                double longitude,
-                double[] declination,
-                double[] equationOfTime)
+        public static SunRiseSetTransitResult SunRiseSetTransitGeometric(
+            DateTimeOffset[] times,
+            double latitude,
+            double longitude,
+            double[] declination,
+            double[] equationOfTime)
         {
             ArgumentNullException.ThrowIfNull(times);
             ArgumentNullException.ThrowIfNull(declination);
@@ -338,20 +337,53 @@ namespace pv
             var sunriseAngle = new double[times.Length];
             var sunsetAngle = new double[times.Length];
             var transitAngle = new double[times.Length];
+            var eventIndexes = new int[times.Length];
+            var eventCount = 0;
             for (var i = 0; i < times.Length; i++)
             {
-                sunsetAngle[i] = Math.Acos(
-                    -Math.Tan(declination[i]) * Math.Tan(latitudeRadians)) * 180.0 / Math.PI;
-                sunriseAngle[i] = -sunsetAngle[i];
+                var cosineHourAngle =
+                    -Math.Tan(declination[i]) * Math.Tan(latitudeRadians);
+                if (cosineHourAngle >= -1.0 && cosineHourAngle <= 1.0)
+                {
+                    sunsetAngle[eventCount] =
+                        Math.Acos(cosineHourAngle) * 180.0 / Math.PI;
+                    sunriseAngle[eventCount] = -sunsetAngle[eventCount];
+                    eventIndexes[eventCount++] = i;
+                }
             }
 
-            return (
-                LocalTimesFromHoursSinceMidnight(
-                    times, HourAngleToHours(times, sunriseAngle, longitude, equationOfTime)),
-                LocalTimesFromHoursSinceMidnight(
-                    times, HourAngleToHours(times, sunsetAngle, longitude, equationOfTime)),
-                LocalTimesFromHoursSinceMidnight(
-                    times, HourAngleToHours(times, transitAngle, longitude, equationOfTime)));
+            var eventTimes = new DateTimeOffset[eventCount];
+            var eventEquationOfTime = new double[eventCount];
+            for (var i = 0; i < eventCount; i++)
+            {
+                eventTimes[i] = times[eventIndexes[i]];
+                eventEquationOfTime[i] = equationOfTime[eventIndexes[i]];
+            }
+
+            var sunriseTimes = LocalTimesFromHoursSinceMidnight(
+                eventTimes,
+                HourAngleToHours(
+                    eventTimes, sunriseAngle[..eventCount], longitude, eventEquationOfTime));
+            var sunsetTimes = LocalTimesFromHoursSinceMidnight(
+                eventTimes,
+                HourAngleToHours(
+                    eventTimes, sunsetAngle[..eventCount], longitude, eventEquationOfTime));
+            var sunrise = new DateTimeOffset?[times.Length];
+            var sunset = new DateTimeOffset?[times.Length];
+            for (var i = 0; i < eventCount; i++)
+            {
+                sunrise[eventIndexes[i]] = sunriseTimes[i];
+                sunset[eventIndexes[i]] = sunsetTimes[i];
+            }
+
+            return new SunRiseSetTransitResult
+            {
+                Times = (DateTimeOffset[])times.Clone(),
+                Sunrise = sunrise,
+                Sunset = sunset,
+                Transit = LocalTimesFromHoursSinceMidnight(
+                    times, HourAngleToHours(times, transitAngle, longitude, equationOfTime))
+            };
         }
 
         /// <summary>
