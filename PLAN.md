@@ -36,7 +36,7 @@ is either in the backlog in section 7 or explicitly out of scope in section 2.
 - [x] `equation_of_time_pvcdrom` → `SolarPosition.EquationOfTimePvCdrom`
 - [x] `declination_spencer71` → `SolarPosition.DeclinationSpencer71`
 - [x] `declination_cooper69` → `SolarPosition.DeclinationCooper69`
-- [ ] `solar_azimuth_analytical` → backlog **F1** (#6)
+- [x] `solar_azimuth_analytical` → `SolarPosition.SolarAzimuthAnalytical`
 - [x] `solar_zenith_analytical` → `SolarPosition.SolarZenith`
 - [x] `hour_angle` → `SolarPosition.HourAngle`
 - [x] `sun_rise_set_transit_geometric` → `SolarPosition.SunRiseSetTransitGeometric`
@@ -323,10 +323,10 @@ numbers.
 | P0 | [#1](https://github.com/mikofski/pv.net/issues/1) | Test infrastructure: xUnit project, fixture pipeline, retarget to `net8.0`, shared result classes | – | [x] |
 | P1 | [#16](https://github.com/mikofski/pv.net/issues/16) | `Location` API transition, stateless calculation boundaries, silent library, result-contract reconciliation (section 8) | P0 | [x] |
 | S1 | [#2](https://github.com/mikofski/pv.net/issues/2) | `Spa`: Julian day/century/millennium functions and `calculate_deltat` | P0 | [x] |
-| S2 | [#3](https://github.com/mikofski/pv.net/issues/3) | `Spa`: solar position chain, from heliocentric terms to `equation_of_time` and `solar_position` | S1 | [ ] |
+| S2 | [#3](https://github.com/mikofski/pv.net/issues/3) | `Spa`: solar position chain, from heliocentric terms to `equation_of_time` and `solar_position` | S1 | [x] |
 | S3 | [#4](https://github.com/mikofski/pv.net/issues/4) | `Spa`: `transit_sunrise_sunset` and `earthsun_distance` | S2 | [ ] |
-| A1 | [#7](https://github.com/mikofski/pv.net/issues/7) | `Atmosphere`: `pres2alt` and `alt2pres` (needed by `get_solarposition`) | P0 | [ ] |
-| F1 | [#6](https://github.com/mikofski/pv.net/issues/6) | `solar_azimuth_analytical` | P0 | [ ] |
+| A1 | [#7](https://github.com/mikofski/pv.net/issues/7) | `Atmosphere`: `pres2alt` and `alt2pres` (needed by `get_solarposition`) | P0 | [x] |
+| F1 | [#6](https://github.com/mikofski/pv.net/issues/6) | `solar_azimuth_analytical` | P0 | [x] |
 | F2 | [#5](https://github.com/mikofski/pv.net/issues/5) | `sun_rise_set_transit_geometric` and its three private helpers | P1 | [x] |
 | F3 | [#8](https://github.com/mikofski/pv.net/issues/8) | `ephemeris` | P1 | [ ] |
 | F4 | [#9](https://github.com/mikofski/pv.net/issues/9) | Public `spa` (`SolarPosition.Spa`, port of `spa_python`) and `_datetime_to_unixtime` | S2, P1 | [ ] |

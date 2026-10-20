@@ -1,0 +1,95 @@
+{
+  "pvlib_version": "0.16.1",
+  "cases": [
+    {
+      "name": "pres2alt_upstream",
+      "inputs": {
+        "pressure": [
+          10000.0,
+          90000.0,
+          101325.0
+        ]
+      },
+      "expected": [
+        15797.638487577016,
+        988.6373458265807,
+        0.12427004932396812
+      ]
+    },
+    {
+      "name": "alt2pres_upstream",
+      "inputs": {
+        "altitude": [
+          -100.0,
+          0.0,
+          1000.0,
+          8000.0
+        ]
+      },
+      "expected": [
+        102532.0729937887,
+        101324.9987478768,
+        89874.75046856777,
+        35600.496020261984
+      ]
+    },
+    {
+      "name": "pres2alt_solarposition",
+      "inputs": {
+        "pressure": [
+          82000.0,
+          101325.0
+        ]
+      },
+      "expected": [
+        1749.5530962855337,
+        0.12427004932396812
+      ]
+    },
+    {
+      "name": "alt2pres_solarposition",
+      "inputs": {
+        "altitude": [
+          0.0,
+          1830.14,
+          2000.0
+        ]
+      },
+      "expected": [
+        101324.9987478768,
+        81186.4656173044,
+        79495.54246932072
+      ]
+    },
+    {
+      "name": "pres2alt_edges",
+      "inputs": {
+        "pressure": [
+          null,
+          0.0,
+          -1.0
+        ]
+      },
+      "expected": [
+        null,
+        44331.5,
+        null
+      ]
+    },
+    {
+      "name": "alt2pres_edges",
+      "inputs": {
+        "altitude": [
+          null,
+          44331.514,
+          45000.0
+        ]
+      },
+      "expected": [
+        null,
+        0.0,
+        null
+      ]
+    }
+  ]
+}
