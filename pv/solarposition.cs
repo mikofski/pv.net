@@ -309,22 +309,21 @@ namespace pv
         /// circular orbit and a point-source sun, and ignores atmospheric refraction, so errors
         /// are about 10 minutes.
         /// </summary>
+        /// <param name="location">site coordinates and fixed UTC offset [n/d] (Location)</param>
         /// <param name="times">timestamps with the local UTC offset of the location [n/d] (array of DateTimeOffset)</param>
-        /// <param name="latitude">latitude, positive north [degrees] (double)</param>
-        /// <param name="longitude">longitude, positive east [degrees] (double)</param>
         /// <param name="declination">solar declination at times [radians] (array of double)</param>
         /// <param name="equationOfTime">equation of time [minutes] (array of double)</param>
         /// <returns>a tuple of local sunrise, sunset and transit times [n/d] (array of DateTimeOffset each)</returns>
-        /// <exception cref="ArgumentNullException">An array argument is null.</exception>
-        /// <exception cref="ArgumentException">Input arrays have different lengths.</exception>
+        /// <exception cref="ArgumentNullException">An argument is null.</exception>
+        /// <exception cref="ArgumentException">Input arrays have different lengths, or a timestamp offset differs from the location offset.</exception>
         public static (DateTimeOffset[] Sunrise, DateTimeOffset[] Sunset, DateTimeOffset[] Transit)
             SunRiseSetTransitGeometric(
+                Location location,
                 DateTimeOffset[] times,
-                double latitude,
-                double longitude,
                 double[] declination,
                 double[] equationOfTime)
         {
+            ArgumentNullException.ThrowIfNull(location);
             ArgumentNullException.ThrowIfNull(times);
             ArgumentNullException.ThrowIfNull(declination);
             ArgumentNullException.ThrowIfNull(equationOfTime);
@@ -334,12 +333,19 @@ namespace pv
                     "times, declination, and equationOfTime must have the same length.");
             }
 
-            var latitudeRadians = latitude * Math.PI / 180.0;
+            var latitudeRadians = location.Latitude * Math.PI / 180.0;
             var sunriseAngle = new double[times.Length];
             var sunsetAngle = new double[times.Length];
             var transitAngle = new double[times.Length];
             for (var i = 0; i < times.Length; i++)
             {
+                if (times[i].Offset != location.UtcOffset)
+                {
+                    throw new ArgumentException(
+                        "Every timestamp must use the UTC offset specified by location.",
+                        nameof(times));
+                }
+
                 sunsetAngle[i] = Math.Acos(
                     -Math.Tan(declination[i]) * Math.Tan(latitudeRadians)) * 180.0 / Math.PI;
                 sunriseAngle[i] = -sunsetAngle[i];
@@ -347,11 +353,11 @@ namespace pv
 
             return (
                 LocalTimesFromHoursSinceMidnight(
-                    times, HourAngleToHours(times, sunriseAngle, longitude, equationOfTime)),
+                    times, HourAngleToHours(times, sunriseAngle, location.Longitude, equationOfTime)),
                 LocalTimesFromHoursSinceMidnight(
-                    times, HourAngleToHours(times, sunsetAngle, longitude, equationOfTime)),
+                    times, HourAngleToHours(times, sunsetAngle, location.Longitude, equationOfTime)),
                 LocalTimesFromHoursSinceMidnight(
-                    times, HourAngleToHours(times, transitAngle, longitude, equationOfTime)));
+                    times, HourAngleToHours(times, transitAngle, location.Longitude, equationOfTime)));
         }
 
         /// <summary>
