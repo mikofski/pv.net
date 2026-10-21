@@ -1,4 +1,3 @@
-#nullable enable
 using System;
 
 namespace pv
@@ -190,6 +189,294 @@ namespace pv
             return zenith;
         }
 
+        /// <summary>
+        /// Calculates analytical solar azimuth from spherical trigonometry (Duffie &amp; Beckman).
+        /// Port of pvlib.solarposition.solar_azimuth_analytical.
+        /// </summary>
+        /// <param name="latitude">latitude of location [radians] (array of double)</param>
+        /// <param name="hourAngle">hour angle in local solar time [radians] (array of double)</param>
+        /// <param name="declination">solar declination [radians] (array of double)</param>
+        /// <param name="zenith">solar zenith angle [radians] (array of double)</param>
+        /// <returns>solar azimuth angle, east of north [radians] (array of double)</returns>
+        /// <exception cref="ArgumentNullException">An array argument is null.</exception>
+        /// <exception cref="ArgumentException">Array lengths differ.</exception>
+        public static double[] SolarAzimuthAnalytical(
+            double[] latitude,
+            double[] hourAngle,
+            double[] declination,
+            double[] zenith)
+        {
+            ArgumentNullException.ThrowIfNull(latitude);
+            ArgumentNullException.ThrowIfNull(hourAngle);
+            ArgumentNullException.ThrowIfNull(declination);
+            ArgumentNullException.ThrowIfNull(zenith);
+            if (latitude.Length != hourAngle.Length
+                || latitude.Length != declination.Length
+                || latitude.Length != zenith.Length)
+            {
+                throw new ArgumentException("All input arrays must have the same length.");
+            }
+
+            var azimuth = new double[latitude.Length];
+            for (var i = 0; i < azimuth.Length; i++)
+            {
+                azimuth[i] = CalculateSolarAzimuthAnalytical(
+                    latitude[i], hourAngle[i], declination[i], zenith[i]);
+            }
+
+            return azimuth;
+        }
+
+        /// <summary>
+        /// Calculates analytical solar azimuth from spherical trigonometry (Duffie &amp; Beckman).
+        /// Port of pvlib.solarposition.solar_azimuth_analytical.
+        /// </summary>
+        /// <param name="latitude">latitude of location [radians] (double)</param>
+        /// <param name="hourAngle">hour angle in local solar time [radians] (array of double)</param>
+        /// <param name="declination">solar declination [radians] (array of double)</param>
+        /// <param name="zenith">solar zenith angle [radians] (array of double)</param>
+        /// <returns>solar azimuth angle, east of north [radians] (array of double)</returns>
+        /// <exception cref="ArgumentNullException">An array argument is null.</exception>
+        /// <exception cref="ArgumentException">Array lengths differ.</exception>
+        public static double[] SolarAzimuthAnalytical(
+            double latitude,
+            double[] hourAngle,
+            double[] declination,
+            double[] zenith)
+        {
+            ArgumentNullException.ThrowIfNull(hourAngle);
+            ArgumentNullException.ThrowIfNull(declination);
+            ArgumentNullException.ThrowIfNull(zenith);
+            if (hourAngle.Length != declination.Length
+                || hourAngle.Length != zenith.Length)
+            {
+                throw new ArgumentException("All input arrays must have the same length.");
+            }
+
+            var azimuth = new double[hourAngle.Length];
+            for (var i = 0; i < azimuth.Length; i++)
+            {
+                azimuth[i] = CalculateSolarAzimuthAnalytical(
+                    latitude, hourAngle[i], declination[i], zenith[i]);
+            }
+
+            return azimuth;
+        }
+
+        /// <summary>
+        /// Calculates analytical solar azimuth for a single set of angles.
+        /// </summary>
+        /// <param name="latitude">latitude of location [radians] (double)</param>
+        /// <param name="hourAngle">hour angle in local solar time [radians] (double)</param>
+        /// <param name="declination">solar declination [radians] (double)</param>
+        /// <param name="zenith">solar zenith angle [radians] (double)</param>
+        /// <returns>solar azimuth angle, east of north [radians] (double)</returns>
+        private static double CalculateSolarAzimuthAnalytical(
+            double latitude,
+            double hourAngle,
+            double declination,
+            double zenith)
+        {
+            var numerator = Math.Cos(zenith) * Math.Sin(latitude) - Math.Sin(declination);
+            var denominator = Math.Sin(zenith) * Math.Cos(latitude);
+            var cosineAzimuth = numerator / denominator;
+
+            if (Math.Abs(denominator) <= 1e-8)
+            {
+                cosineAzimuth = 1.0;
+            }
+
+            if (Math.Abs(cosineAzimuth - 1.0) <= 1e-8)
+            {
+                cosineAzimuth = 1.0;
+            }
+
+            if (Math.Abs(cosineAzimuth + 1.0) <= 1e-8)
+            {
+                cosineAzimuth = -1.0;
+            }
+
+            if (double.IsNaN(hourAngle))
+            {
+                return double.NaN;
+            }
+
+            return Math.Sign(hourAngle) * Math.Acos(cosineAzimuth) + Math.PI;
+        }
+
+        /// <summary>
+        /// Port of pvlib.solarposition.sun_rise_set_transit_geometric. This method assumes a
+        /// circular orbit and a point-source sun, and ignores atmospheric refraction, so errors
+        /// are about 10 minutes.
+        /// </summary>
+        /// <param name="location">site coordinates and fixed UTC offset [n/d] (Location)</param>
+        /// <param name="times">timestamps with the local UTC offset of the location [n/d] (array of DateTimeOffset)</param>
+        /// <param name="declination">solar declination at times [radians] (array of double)</param>
+        /// <param name="equationOfTime">equation of time [minutes] (array of double)</param>
+        /// <returns>local sunrise, sunset and transit times [n/d]; sunrise and sunset are null when they do not occur</returns>
+        /// <exception cref="ArgumentNullException">An argument is null.</exception>
+        /// <exception cref="ArgumentException">Input arrays have different lengths, or a timestamp offset differs from the location offset.</exception>
+        public static SunRiseSetTransitResult SunRiseSetTransitGeometric(
+            Location location,
+            DateTimeOffset[] times,
+            double[] declination,
+            double[] equationOfTime)
+        {
+            ArgumentNullException.ThrowIfNull(location);
+            ArgumentNullException.ThrowIfNull(times);
+            ArgumentNullException.ThrowIfNull(declination);
+            ArgumentNullException.ThrowIfNull(equationOfTime);
+            if (times.Length != declination.Length || times.Length != equationOfTime.Length)
+            {
+                throw new ArgumentException(
+                    "times, declination, and equationOfTime must have the same length.");
+            }
+
+            var latitudeRadians = location.Latitude * Math.PI / 180.0;
+            var sunriseAngle = new double[times.Length];
+            var sunsetAngle = new double[times.Length];
+            var transitAngle = new double[times.Length];
+            var eventIndexes = new int[times.Length];
+            var eventCount = 0;
+            for (var i = 0; i < times.Length; i++)
+            {
+                if (times[i].Offset != location.UtcOffset)
+                {
+                    throw new ArgumentException(
+                        "Every timestamp must use the UTC offset specified by location.",
+                        nameof(times));
+                }
+
+                var cosineHourAngle =
+                    -Math.Tan(declination[i]) * Math.Tan(latitudeRadians);
+                if (cosineHourAngle >= -1.0 && cosineHourAngle <= 1.0)
+                {
+                    sunsetAngle[eventCount] =
+                        Math.Acos(cosineHourAngle) * 180.0 / Math.PI;
+                    sunriseAngle[eventCount] = -sunsetAngle[eventCount];
+                    eventIndexes[eventCount++] = i;
+                }
+            }
+
+            var eventTimes = new DateTimeOffset[eventCount];
+            var eventEquationOfTime = new double[eventCount];
+            for (var i = 0; i < eventCount; i++)
+            {
+                eventTimes[i] = times[eventIndexes[i]];
+                eventEquationOfTime[i] = equationOfTime[eventIndexes[i]];
+            }
+
+            var sunriseTimes = LocalTimesFromHoursSinceMidnight(
+                eventTimes,
+                HourAngleToHours(
+                    eventTimes, sunriseAngle[..eventCount], location.Longitude, eventEquationOfTime));
+            var sunsetTimes = LocalTimesFromHoursSinceMidnight(
+                eventTimes,
+                HourAngleToHours(
+                    eventTimes, sunsetAngle[..eventCount], location.Longitude, eventEquationOfTime));
+            var sunrise = new DateTimeOffset?[times.Length];
+            var sunset = new DateTimeOffset?[times.Length];
+            for (var i = 0; i < eventCount; i++)
+            {
+                sunrise[eventIndexes[i]] = sunriseTimes[i];
+                sunset[eventIndexes[i]] = sunsetTimes[i];
+            }
+
+            return new SunRiseSetTransitResult
+            {
+                Times = (DateTimeOffset[])times.Clone(),
+                Sunrise = sunrise,
+                Sunset = sunset,
+                Transit = LocalTimesFromHoursSinceMidnight(
+                    times, HourAngleToHours(times, transitAngle, location.Longitude, equationOfTime))
+            };
+        }
+
+        /// <summary>
+        /// Converts solar hour angles to hours after local midnight.
+        /// </summary>
+        /// <param name="times">timestamps with the local UTC offset of the location [n/d] (array of DateTimeOffset)</param>
+        /// <param name="hourAngle">solar hour angle [degrees] (array of double)</param>
+        /// <param name="longitude">longitude, positive east [degrees] (double)</param>
+        /// <param name="equationOfTime">equation of time [minutes] (array of double)</param>
+        /// <returns>hours after local midnight [hours] (array of double)</returns>
+        /// <exception cref="ArgumentNullException">An array argument is null.</exception>
+        /// <exception cref="ArgumentException">Input arrays have different lengths.</exception>
+        internal static double[] HourAngleToHours(
+            DateTimeOffset[] times,
+            double[] hourAngle,
+            double longitude,
+            double[] equationOfTime)
+        {
+            ArgumentNullException.ThrowIfNull(times);
+            ArgumentNullException.ThrowIfNull(hourAngle);
+            ArgumentNullException.ThrowIfNull(equationOfTime);
+            if (times.Length != hourAngle.Length || times.Length != equationOfTime.Length)
+            {
+                throw new ArgumentException(
+                    "times, hourAngle, and equationOfTime must have the same length.");
+            }
+
+            var hours = new double[times.Length];
+            for (var i = 0; i < times.Length; i++)
+            {
+                hours[i] = (hourAngle[i] - longitude - equationOfTime[i] / 4.0) / 15.0
+                            + 12.0 + times[i].Offset.TotalHours;
+            }
+
+            return hours;
+        }
+
+        /// <summary>
+        /// Converts hours after local midnight to local timestamps.
+        /// </summary>
+        /// <param name="times">timestamps with the local UTC offset of the location [n/d] (array of DateTimeOffset)</param>
+        /// <param name="hours">hours after local midnight [hours] (array of double)</param>
+        /// <returns>local timestamps [n/d] (array of DateTimeOffset)</returns>
+        /// <exception cref="ArgumentNullException">An array argument is null.</exception>
+        /// <exception cref="ArgumentException">Input arrays have different lengths.</exception>
+        internal static DateTimeOffset[] LocalTimesFromHoursSinceMidnight(
+            DateTimeOffset[] times,
+            double[] hours)
+        {
+            ArgumentNullException.ThrowIfNull(times);
+            ArgumentNullException.ThrowIfNull(hours);
+            if (times.Length != hours.Length)
+            {
+                throw new ArgumentException("times and hours must have the same length.");
+            }
+
+            var localTimes = new DateTimeOffset[times.Length];
+            for (var i = 0; i < times.Length; i++)
+            {
+                var localMidnight = new DateTimeOffset(
+                    times[i].Year, times[i].Month, times[i].Day, 0, 0, 0, times[i].Offset);
+                localTimes[i] = localMidnight.AddHours(hours[i]);
+            }
+
+            return localTimes;
+        }
+
+        /// <summary>
+        /// Converts local timestamps to hours after their local calendar midnight.
+        /// </summary>
+        /// <param name="times">timestamps with the local UTC offset of the location [n/d] (array of DateTimeOffset)</param>
+        /// <returns>hours after local midnight [hours] (array of double)</returns>
+        /// <exception cref="ArgumentNullException">times is null.</exception>
+        internal static double[] TimesToHoursAfterLocalMidnight(DateTimeOffset[] times)
+        {
+            ArgumentNullException.ThrowIfNull(times);
+
+            var hours = new double[times.Length];
+            for (var i = 0; i < times.Length; i++)
+            {
+                hours[i] = times[i].TimeOfDay.TotalHours;
+            }
+
+            return hours;
+        }
+
+#nullable enable
         /// <summary>
         /// Calculates solar position with a native ephemeris calculator ported from
         /// pvlib.solarposition.ephemeris. Accuracy is not guaranteed; the method is based
@@ -445,5 +732,6 @@ namespace pv
         /// <returns>remainder in the range from zero up to the modulus [n/d] (double)</returns>
         private static double NumpyModulo(double value, double modulus) =>
             value - Math.Floor(value / modulus) * modulus;
+#nullable restore
     }
 }

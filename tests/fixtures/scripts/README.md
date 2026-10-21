@@ -22,6 +22,7 @@ python tests/fixtures/scripts/solarposition_analytical.py
 python tests/fixtures/scripts/sun_rise_set_transit_spa_polar.py
 python tests/fixtures/scripts/spa_time.py
 python tests/fixtures/scripts/ephemeris.py
+python tests/fixtures/scripts/atmosphere_pres2alt_alt2pres.py
 ```
 
 `solarposition_analytical.py` covers leap-year day-of-year values and
@@ -32,3 +33,5 @@ with independently calculated transit times.
 delta-T polynomial boundaries using pvlib's SPA test constants.
 `ephemeris.py` covers the native ephemeris position outputs, fixed-offset
 timestamps, and scalar and array pressure/temperature inputs.
+`atmosphere_pres2alt_alt2pres.py` covers pressure/altitude conversions using
+upstream atmosphere test inputs, solar-position inputs, and numerical edge cases.
