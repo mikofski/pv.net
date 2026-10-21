@@ -476,7 +476,6 @@ namespace pv
             return hours;
         }
 
-#nullable enable
         /// <summary>
         /// Calculates solar position with a native ephemeris calculator ported from
         /// pvlib.solarposition.ephemeris. Accuracy is not guaranteed; the method is based
@@ -496,7 +495,8 @@ namespace pv
             double longitude,
             double pressure = 101325.0,
             double temperature = 12.0) =>
-            EphemerisCore(times, latitude, longitude, pressure, null, temperature, null);
+            EphemerisCore(times, latitude, longitude, pressure, Array.Empty<double>(), false,
+                temperature, Array.Empty<double>(), false);
 
         /// <summary>
         /// Calculates solar position with a native ephemeris calculator ported from
@@ -520,7 +520,8 @@ namespace pv
             double temperature = 12.0)
         {
             ArgumentNullException.ThrowIfNull(pressure);
-            return EphemerisCore(times, latitude, longitude, 0.0, pressure, temperature, null);
+            return EphemerisCore(times, latitude, longitude, 0.0, pressure, true,
+                temperature, Array.Empty<double>(), false);
         }
 
         /// <summary>
@@ -545,7 +546,8 @@ namespace pv
             double[] temperature)
         {
             ArgumentNullException.ThrowIfNull(temperature);
-            return EphemerisCore(times, latitude, longitude, pressure, null, 0.0, temperature);
+            return EphemerisCore(times, latitude, longitude, pressure, Array.Empty<double>(), false,
+                0.0, temperature, true);
         }
 
         /// <summary>
@@ -571,7 +573,8 @@ namespace pv
         {
             ArgumentNullException.ThrowIfNull(pressure);
             ArgumentNullException.ThrowIfNull(temperature);
-            return EphemerisCore(times, latitude, longitude, 0.0, pressure, 0.0, temperature);
+            return EphemerisCore(times, latitude, longitude, 0.0, pressure, true,
+                0.0, temperature, true);
         }
 
         /// <summary>
@@ -583,8 +586,10 @@ namespace pv
         /// <param name="longitude">longitude, positive east [degrees] (double)</param>
         /// <param name="pressure">ambient pressure [Pa] (double)</param>
         /// <param name="pressureArray">ambient pressure [Pa] (array of double)</param>
+        /// <param name="hasPressureArray">whether pressureArray supplies per-timestamp values [n/d] (bool)</param>
         /// <param name="temperature">ambient temperature [degrees C] (double)</param>
         /// <param name="temperatureArray">ambient temperature [degrees C] (array of double)</param>
+        /// <param name="hasTemperatureArray">whether temperatureArray supplies per-timestamp values [n/d] (bool)</param>
         /// <returns>Solar position result: ApparentElevation, Elevation, Azimuth, ApparentZenith, and Zenith [degrees]; SolarTime [hours]; EquationOfTime is null.</returns>
         /// <exception cref="ArgumentNullException">times or a supplied parameter array is null.</exception>
         /// <exception cref="ArgumentException">A supplied parameter array does not have one value per timestamp.</exception>
@@ -593,17 +598,19 @@ namespace pv
             double latitude,
             double longitude,
             double pressure,
-            double[]? pressureArray,
+            double[] pressureArray,
+            bool hasPressureArray,
             double temperature,
-            double[]? temperatureArray)
+            double[] temperatureArray,
+            bool hasTemperatureArray)
         {
             ArgumentNullException.ThrowIfNull(times);
-            if (pressureArray is not null && pressureArray.Length != times.Length)
+            if (hasPressureArray && pressureArray.Length != times.Length)
             {
                 throw new ArgumentException("pressure must have one value per timestamp.", nameof(pressureArray));
             }
 
-            if (temperatureArray is not null && temperatureArray.Length != times.Length)
+            if (hasTemperatureArray && temperatureArray.Length != times.Length)
             {
                 throw new ArgumentException("temperature must have one value per timestamp.", nameof(temperatureArray));
             }
@@ -698,8 +705,8 @@ namespace pv
                     refraction = -20.774 / tangentElevation;
                 }
 
-                var localPressure = pressureArray is null ? pressure : pressureArray[i];
-                var localTemperature = temperatureArray is null ? temperature : temperatureArray[i];
+                var localPressure = hasPressureArray ? pressureArray[i] : pressure;
+                var localTemperature = hasTemperatureArray ? temperatureArray[i] : temperature;
                 refraction *= (283.0 / (273.0 + localTemperature))
                     * (localPressure / 101325.0) / 3600.0;
                 var apparentSunElevation = sunElevation + refraction;
@@ -732,6 +739,5 @@ namespace pv
         /// <returns>remainder in the range from zero up to the modulus [n/d] (double)</returns>
         private static double NumpyModulo(double value, double modulus) =>
             value - Math.Floor(value / modulus) * modulus;
-#nullable restore
     }
 }
