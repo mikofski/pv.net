@@ -58,15 +58,15 @@ public class EphemerisTests
     [Fact]
     public void EmptyInputsAndNaNParametersArePreserved()
     {
-        var empty = SolarPosition.Ephemeris([], 0, 0);
+        var location = new Location(0, 0, 0, TimeSpan.Zero);
+        var empty = SolarPosition.Ephemeris(location, []);
         Assert.Empty(empty.Times);
         Assert.Empty(empty.ApparentElevation);
         Assert.Empty(empty.SolarTime!);
 
         var nanPressure = SolarPosition.Ephemeris(
+            location,
             [new DateTimeOffset(2019, 1, 1, 12, 0, 0, TimeSpan.Zero)],
-            0,
-            0,
             double.NaN);
         Assert.True(double.IsNaN(nanPressure.ApparentElevation[0]));
     }
@@ -75,15 +75,31 @@ public class EphemerisTests
     public void ParameterArraysMustMatchTimes()
     {
         DateTimeOffset[] times = [new(2019, 1, 1, 12, 0, 0, TimeSpan.Zero)];
+        var location = new Location(0, 0, 0, TimeSpan.Zero);
 
         Assert.Throws<ArgumentNullException>(() =>
-            SolarPosition.Ephemeris(times, 0, 0, (double[])null!));
+            SolarPosition.Ephemeris(location, times, (double[])null!));
         Assert.Throws<ArgumentNullException>(() =>
-            SolarPosition.Ephemeris(times, 0, 0, 101325, (double[])null!));
+            SolarPosition.Ephemeris(location, times, 101325, (double[])null!));
         Assert.Throws<ArgumentException>(() =>
-            SolarPosition.Ephemeris(times, 0, 0, new[] { 80000.0, 90000.0 }));
+            SolarPosition.Ephemeris(location, times, new[] { 80000.0, 90000.0 }));
         Assert.Throws<ArgumentException>(() =>
-            SolarPosition.Ephemeris(times, 0, 0, 101325, new[] { 10.0, 20.0 }));
+            SolarPosition.Ephemeris(location, times, 101325, new[] { 10.0, 20.0 }));
+    }
+
+    [Fact]
+    public void LocationAndTimestampOffsetsAreRequired()
+    {
+        DateTimeOffset[] times =
+        [
+            new(2019, 1, 1, 12, 0, 0, TimeSpan.Zero),
+            new(2019, 1, 1, 12, 0, 0, TimeSpan.FromHours(-5))
+        ];
+
+        Assert.Throws<ArgumentNullException>(() =>
+            SolarPosition.Ephemeris(null!, times));
+        Assert.Throws<ArgumentException>(() =>
+            SolarPosition.Ephemeris(new Location(0, 0, 0, TimeSpan.Zero), times));
     }
 
     private static SolarPositionResult Calculate(EphemerisInputs inputs)
@@ -98,27 +114,32 @@ public class EphemerisTests
             : null;
         var pressureScalar = pressureArray ? 0 : inputs.Pressure.GetDouble();
         var temperatureScalar = temperatureArray ? 0 : inputs.Temperature.GetDouble();
+        var location = new Location(
+            inputs.Latitude,
+            inputs.Longitude,
+            0,
+            inputs.Times.Length == 0 ? TimeSpan.Zero : inputs.Times[0].Offset);
 
         if (pressureArray && temperatureArray)
         {
             return SolarPosition.Ephemeris(
-                inputs.Times, inputs.Latitude, inputs.Longitude, pressure!, temperature!);
+                location, inputs.Times, pressure!, temperature!);
         }
 
         if (pressureArray)
         {
             return SolarPosition.Ephemeris(
-                inputs.Times, inputs.Latitude, inputs.Longitude, pressure!, temperatureScalar);
+                location, inputs.Times, pressure!, temperatureScalar);
         }
 
         if (temperatureArray)
         {
             return SolarPosition.Ephemeris(
-                inputs.Times, inputs.Latitude, inputs.Longitude, pressureScalar, temperature!);
+                location, inputs.Times, pressureScalar, temperature!);
         }
 
         return SolarPosition.Ephemeris(
-            inputs.Times, inputs.Latitude, inputs.Longitude, pressureScalar, temperatureScalar);
+            location, inputs.Times, pressureScalar, temperatureScalar);
     }
 
     private static void AssertColumn(JsonElement expected, string name, double[] actual)

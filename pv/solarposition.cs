@@ -482,20 +482,19 @@ namespace pv
         /// on informal class materials by Grover Hughes at Sandia National Laboratories (1985)
         /// and is not reliable for dates far from the present.
         /// </summary>
-        /// <param name="times">timestamps; the UTC offset gives the timezone [n/d] (array of DateTimeOffset)</param>
-        /// <param name="latitude">latitude, positive north [degrees] (double)</param>
-        /// <param name="longitude">longitude, positive east [degrees] (double)</param>
+        /// <param name="location">site coordinates and fixed UTC offset [n/d] (Location)</param>
+        /// <param name="times">timestamps using the location UTC offset [n/d] (array of DateTimeOffset)</param>
         /// <param name="pressure">ambient pressure [Pa] (double, default: 101325.0)</param>
         /// <param name="temperature">ambient temperature [degrees C] (double, default: 12.0)</param>
         /// <returns>SolarPositionResult: ApparentElevation, Elevation, Azimuth, ApparentZenith, and Zenith [degrees] (array of double); SolarTime [hours] (array of double); EquationOfTime [minutes] (array of double), null. Result type [n/d] (SolarPositionResult).</returns>
-        /// <exception cref="ArgumentNullException">times is null.</exception>
+        /// <exception cref="ArgumentNullException">location or times is null.</exception>
+        /// <exception cref="ArgumentException">A timestamp offset differs from the location offset.</exception>
         public static SolarPositionResult Ephemeris(
+            Location location,
             DateTimeOffset[] times,
-            double latitude,
-            double longitude,
             double pressure = 101325.0,
             double temperature = 12.0) =>
-            EphemerisCore(times, latitude, longitude, pressure, Array.Empty<double>(), false,
+            EphemerisCore(location, times, pressure, Array.Empty<double>(), false,
                 temperature, Array.Empty<double>(), false);
 
         /// <summary>
@@ -504,23 +503,21 @@ namespace pv
         /// on informal class materials by Grover Hughes at Sandia National Laboratories (1985)
         /// and is not reliable for dates far from the present.
         /// </summary>
-        /// <param name="times">timestamps; the UTC offset gives the timezone [n/d] (array of DateTimeOffset)</param>
-        /// <param name="latitude">latitude, positive north [degrees] (double)</param>
-        /// <param name="longitude">longitude, positive east [degrees] (double)</param>
+        /// <param name="location">site coordinates and fixed UTC offset [n/d] (Location)</param>
+        /// <param name="times">timestamps using the location UTC offset [n/d] (array of DateTimeOffset)</param>
         /// <param name="pressure">ambient pressure [Pa] (array of double)</param>
         /// <param name="temperature">ambient temperature [degrees C] (double, default: 12.0)</param>
         /// <returns>SolarPositionResult: ApparentElevation, Elevation, Azimuth, ApparentZenith, and Zenith [degrees] (array of double); SolarTime [hours] (array of double); EquationOfTime [minutes] (array of double), null. Result type [n/d] (SolarPositionResult).</returns>
-        /// <exception cref="ArgumentNullException">times or pressure is null.</exception>
-        /// <exception cref="ArgumentException">pressure does not have one value per timestamp.</exception>
+        /// <exception cref="ArgumentNullException">location, times, or pressure is null.</exception>
+        /// <exception cref="ArgumentException">A timestamp offset differs from the location offset, or pressure does not have one value per timestamp.</exception>
         public static SolarPositionResult Ephemeris(
+            Location location,
             DateTimeOffset[] times,
-            double latitude,
-            double longitude,
             double[] pressure,
             double temperature = 12.0)
         {
             ArgumentNullException.ThrowIfNull(pressure);
-            return EphemerisCore(times, latitude, longitude, 0.0, pressure, true,
+            return EphemerisCore(location, times, 0.0, pressure, true,
                 temperature, Array.Empty<double>(), false);
         }
 
@@ -530,23 +527,21 @@ namespace pv
         /// on informal class materials by Grover Hughes at Sandia National Laboratories (1985)
         /// and is not reliable for dates far from the present.
         /// </summary>
-        /// <param name="times">timestamps; the UTC offset gives the timezone [n/d] (array of DateTimeOffset)</param>
-        /// <param name="latitude">latitude, positive north [degrees] (double)</param>
-        /// <param name="longitude">longitude, positive east [degrees] (double)</param>
+        /// <param name="location">site coordinates and fixed UTC offset [n/d] (Location)</param>
+        /// <param name="times">timestamps using the location UTC offset [n/d] (array of DateTimeOffset)</param>
         /// <param name="pressure">ambient pressure [Pa] (double)</param>
         /// <param name="temperature">ambient temperature [degrees C] (array of double)</param>
         /// <returns>SolarPositionResult: ApparentElevation, Elevation, Azimuth, ApparentZenith, and Zenith [degrees] (array of double); SolarTime [hours] (array of double); EquationOfTime [minutes] (array of double), null. Result type [n/d] (SolarPositionResult).</returns>
-        /// <exception cref="ArgumentNullException">times or temperature is null.</exception>
-        /// <exception cref="ArgumentException">temperature does not have one value per timestamp.</exception>
+        /// <exception cref="ArgumentNullException">location, times, or temperature is null.</exception>
+        /// <exception cref="ArgumentException">A timestamp offset differs from the location offset, or temperature does not have one value per timestamp.</exception>
         public static SolarPositionResult Ephemeris(
+            Location location,
             DateTimeOffset[] times,
-            double latitude,
-            double longitude,
             double pressure,
             double[] temperature)
         {
             ArgumentNullException.ThrowIfNull(temperature);
-            return EphemerisCore(times, latitude, longitude, pressure, Array.Empty<double>(), false,
+            return EphemerisCore(location, times, pressure, Array.Empty<double>(), false,
                 0.0, temperature, true);
         }
 
@@ -556,24 +551,22 @@ namespace pv
         /// on informal class materials by Grover Hughes at Sandia National Laboratories (1985)
         /// and is not reliable for dates far from the present.
         /// </summary>
-        /// <param name="times">timestamps; the UTC offset gives the timezone [n/d] (array of DateTimeOffset)</param>
-        /// <param name="latitude">latitude, positive north [degrees] (double)</param>
-        /// <param name="longitude">longitude, positive east [degrees] (double)</param>
+        /// <param name="location">site coordinates and fixed UTC offset [n/d] (Location)</param>
+        /// <param name="times">timestamps using the location UTC offset [n/d] (array of DateTimeOffset)</param>
         /// <param name="pressure">ambient pressure [Pa] (array of double)</param>
         /// <param name="temperature">ambient temperature [degrees C] (array of double)</param>
         /// <returns>SolarPositionResult: ApparentElevation, Elevation, Azimuth, ApparentZenith, and Zenith [degrees] (array of double); SolarTime [hours] (array of double); EquationOfTime [minutes] (array of double), null. Result type [n/d] (SolarPositionResult).</returns>
-        /// <exception cref="ArgumentNullException">times, pressure, or temperature is null.</exception>
-        /// <exception cref="ArgumentException">pressure or temperature does not have one value per timestamp.</exception>
+        /// <exception cref="ArgumentNullException">location, times, pressure, or temperature is null.</exception>
+        /// <exception cref="ArgumentException">A timestamp offset differs from the location offset, or a parameter array does not have one value per timestamp.</exception>
         public static SolarPositionResult Ephemeris(
+            Location location,
             DateTimeOffset[] times,
-            double latitude,
-            double longitude,
             double[] pressure,
             double[] temperature)
         {
             ArgumentNullException.ThrowIfNull(pressure);
             ArgumentNullException.ThrowIfNull(temperature);
-            return EphemerisCore(times, latitude, longitude, 0.0, pressure, true,
+            return EphemerisCore(location, times, 0.0, pressure, true,
                 0.0, temperature, true);
         }
 
@@ -581,9 +574,8 @@ namespace pv
         /// Ports pvlib.solarposition.ephemeris using UTC instants and aligned optional
         /// pressure and temperature arrays.
         /// </summary>
-        /// <param name="times">timestamps in their supplied offsets [n/d] (array of DateTimeOffset)</param>
-        /// <param name="latitude">latitude, positive north [degrees] (double)</param>
-        /// <param name="longitude">longitude, positive east [degrees] (double)</param>
+        /// <param name="location">site coordinates and fixed UTC offset [n/d] (Location)</param>
+        /// <param name="times">timestamps using the location UTC offset [n/d] (array of DateTimeOffset)</param>
         /// <param name="pressure">ambient pressure [Pa] (double)</param>
         /// <param name="pressureArray">ambient pressure [Pa] (array of double)</param>
         /// <param name="hasPressureArray">whether pressureArray supplies per-timestamp values [n/d] (bool)</param>
@@ -591,12 +583,11 @@ namespace pv
         /// <param name="temperatureArray">ambient temperature [degrees C] (array of double)</param>
         /// <param name="hasTemperatureArray">whether temperatureArray supplies per-timestamp values [n/d] (bool)</param>
         /// <returns>Solar position result: ApparentElevation, Elevation, Azimuth, ApparentZenith, and Zenith [degrees]; SolarTime [hours]; EquationOfTime is null.</returns>
-        /// <exception cref="ArgumentNullException">times or a supplied parameter array is null.</exception>
-        /// <exception cref="ArgumentException">A supplied parameter array does not have one value per timestamp.</exception>
+        /// <exception cref="ArgumentNullException">location, times, or a supplied parameter array is null.</exception>
+        /// <exception cref="ArgumentException">A timestamp offset differs from the location offset, or a supplied parameter array does not have one value per timestamp.</exception>
         private static SolarPositionResult EphemerisCore(
+            Location location,
             DateTimeOffset[] times,
-            double latitude,
-            double longitude,
             double pressure,
             double[] pressureArray,
             bool hasPressureArray,
@@ -604,7 +595,18 @@ namespace pv
             double[] temperatureArray,
             bool hasTemperatureArray)
         {
+            ArgumentNullException.ThrowIfNull(location);
             ArgumentNullException.ThrowIfNull(times);
+            for (var i = 0; i < times.Length; i++)
+            {
+                if (times[i].Offset != location.UtcOffset)
+                {
+                    throw new ArgumentException(
+                        "Every timestamp must use the UTC offset specified by location.",
+                        nameof(times));
+                }
+            }
+
             if (hasPressureArray && pressureArray.Length != times.Length)
             {
                 throw new ArgumentException("pressure must have one value per timestamp.", nameof(pressureArray));
@@ -621,8 +623,8 @@ namespace pv
             var apparentZenith = new double[times.Length];
             var zenith = new double[times.Length];
             var solarTime = new double[times.Length];
-            var latitudeRadians = latitude * Math.PI / 180.0;
-            var longitudeForAlgorithm = -longitude;
+            var latitudeRadians = location.Latitude * Math.PI / 180.0;
+            var longitudeForAlgorithm = -location.Longitude;
             const double aberration = 20.0 / 3600.0;
             var meanAnomalies = new double[times.Length];
             var eccentricities = new double[times.Length];
