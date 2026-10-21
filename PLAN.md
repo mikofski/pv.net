@@ -39,14 +39,15 @@ is either in the backlog in section 7 or explicitly out of scope in section 2.
 - [x] `solar_azimuth_analytical` → `SolarPosition.SolarAzimuthAnalytical`
 - [x] `solar_zenith_analytical` → `SolarPosition.SolarZenith`
 - [x] `hour_angle` → `SolarPosition.HourAngle`
-- [ ] `sun_rise_set_transit_geometric` → backlog **F2** (#5)
+- [x] `sun_rise_set_transit_geometric` → `SolarPosition.SunRiseSetTransitGeometric`
 
 ### Private helpers
 
 - [x] `_calculate_simple_day_angle` → `SolarPosition.CalcSimpleDayAngleArray`
 - [ ] `_datetime_to_unixtime` → ported with **F4**
-- [ ] `_hour_angle_to_hours`, `_local_times_from_hours_since_midnight`,
-      `_times_to_hours_after_local_midnight` → ported with **F2**
+- [x] `_hour_angle_to_hours` → `SolarPosition.HourAngleToHours`
+- [x] `_local_times_from_hours_since_midnight` → `SolarPosition.LocalTimesFromHoursSinceMidnight`
+- [x] `_times_to_hours_after_local_midnight` → `SolarPosition.TimesToHoursAfterLocalMidnight`
 - [ ] `_spa_python_import` → not needed; it only switches between pvlib's numpy and numba builds
 - [ ] `_ephem_convert_to_seconds_and_microseconds`, `_ephem_to_timezone`,
       `_ephem_setup` → out of scope (PyEphem)
@@ -326,7 +327,7 @@ numbers.
 | S3 | [#4](https://github.com/mikofski/pv.net/issues/4) | `Spa`: `transit_sunrise_sunset` and `earthsun_distance` | S2 | [ ] |
 | A1 | [#7](https://github.com/mikofski/pv.net/issues/7) | `Atmosphere`: `pres2alt` and `alt2pres` (needed by `get_solarposition`) | P0 | [x] |
 | F1 | [#6](https://github.com/mikofski/pv.net/issues/6) | `solar_azimuth_analytical` | P0 | [x] |
-| F2 | [#5](https://github.com/mikofski/pv.net/issues/5) | `sun_rise_set_transit_geometric` and its three private helpers | P1 | [ ] |
+| F2 | [#5](https://github.com/mikofski/pv.net/issues/5) | `sun_rise_set_transit_geometric` and its three private helpers | P1 | [x] |
 | F3 | [#8](https://github.com/mikofski/pv.net/issues/8) | `ephemeris` | P1 | [ ] |
 | F4 | [#9](https://github.com/mikofski/pv.net/issues/9) | Public `spa` (`SolarPosition.Spa`, port of `spa_python`) and `_datetime_to_unixtime` | S2, P1 | [ ] |
 | F5 | [#10](https://github.com/mikofski/pv.net/issues/10) | `nrel_earthsun_distance` | S3 | [ ] |
