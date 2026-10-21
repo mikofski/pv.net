@@ -18,6 +18,8 @@ public class EphemerisTests
     {
         var fixture = FixtureLoader.Load<EphemerisInputs, JsonElement>("ephemeris.json");
         Assert.Equal("0.16.1", fixture.PvlibVersion);
+        Assert.Contains(fixture.Cases, testCase => testCase.Name == "multi_season_utc");
+        Assert.Contains(fixture.Cases, testCase => testCase.Name == "fractional_seconds_utc");
 
         foreach (var testCase in fixture.Cases)
         {

@@ -624,6 +624,53 @@ namespace pv
             var latitudeRadians = latitude * Math.PI / 180.0;
             var longitudeForAlgorithm = -longitude;
             const double aberration = 20.0 / 3600.0;
+            var meanAnomalies = new double[times.Length];
+            var eccentricities = new double[times.Length];
+            var eccentricAnomalies = new double[times.Length];
+
+            for (var i = 0; i < times.Length; i++)
+            {
+                var utc = times[i].UtcDateTime;
+                var decimalHour = utc.Hour + utc.Minute / 60.0 + utc.Second / 3600.0
+                    + (utc.Ticks % TimeSpan.TicksPerSecond) / (double)TimeSpan.TicksPerHour;
+                var yearFrom1900 = utc.Year - 1900.0;
+                var yearBegin = 365.0 * yearFrom1900
+                    + Math.Floor((yearFrom1900 - 1.0) / 4.0) - 0.5;
+                var zeroDate = yearBegin + utc.DayOfYear;
+                var epochDate = zeroDate + decimalHour / 24.0;
+                var t1 = epochDate / 36525.0;
+                meanAnomalies[i] = NumpyModulo(358.47583 + 0.985600267 * epochDate
+                    - 0.00015 * t1 * t1 - 3.0e-6 * t1 * t1 * t1, 360.0);
+                eccentricities[i] = 0.01675104 - 4.18e-5 * t1 - 1.26e-7 * t1 * t1;
+                eccentricAnomalies[i] = meanAnomalies[i];
+            }
+
+            var previousEccentricAnomalies = new double[times.Length];
+            while (true)
+            {
+                var needsIteration = false;
+                for (var i = 0; i < times.Length; i++)
+                {
+                    if (Math.Abs(eccentricAnomalies[i] - previousEccentricAnomalies[i]) > 0.0001)
+                    {
+                        needsIteration = true;
+                        break;
+                    }
+                }
+
+                if (!needsIteration)
+                {
+                    break;
+                }
+
+                for (var i = 0; i < times.Length; i++)
+                {
+                    previousEccentricAnomalies[i] = eccentricAnomalies[i];
+                    eccentricAnomalies[i] = meanAnomalies[i]
+                        + eccentricities[i] * 180.0 / Math.PI
+                        * Math.Sin(eccentricAnomalies[i] * Math.PI / 180.0);
+                }
+            }
 
             for (var i = 0; i < times.Length; i++)
             {
@@ -631,8 +678,7 @@ namespace pv
                 var year = utc.Year;
                 var dayOfYear = utc.DayOfYear;
                 var decimalHour = utc.Hour + utc.Minute / 60.0 + utc.Second / 3600.0
-                    + (utc.Ticks % TimeSpan.TicksPerMillisecond / 10)
-                    / (double)TimeSpan.TicksPerHour;
+                    + (utc.Ticks % TimeSpan.TicksPerSecond) / (double)TimeSpan.TicksPerHour;
                 var yearFrom1900 = year - 1900.0;
                 var yearBegin = 365.0 * yearFrom1900 + Math.Floor((yearFrom1900 - 1.0) / 4.0) - 0.5;
                 var zeroDate = yearBegin + dayOfYear;
@@ -650,17 +696,8 @@ namespace pv
                     + 5.03e-7 * t1 * t1 * t1) * Math.PI / 180.0;
                 var meanLongitudePerigee = 281.22083 + 4.70684e-5 * epochDate
                     + 0.000453 * t1 * t1 + 3.0e-6 * t1 * t1 * t1;
-                var meanAnomaly = NumpyModulo(358.47583 + 0.985600267 * epochDate
-                    - 0.00015 * t1 * t1 - 3.0e-6 * t1 * t1 * t1, 360.0);
-                var eccentricity = 0.01675104 - 4.18e-5 * t1 - 1.26e-7 * t1 * t1;
-                var eccentricAnomaly = meanAnomaly;
-                var previousEccentricAnomaly = 0.0;
-                while (Math.Abs(eccentricAnomaly - previousEccentricAnomaly) > 0.0001)
-                {
-                    previousEccentricAnomaly = eccentricAnomaly;
-                    eccentricAnomaly = meanAnomaly
-                        + eccentricity * 180.0 / Math.PI * Math.Sin(eccentricAnomaly * Math.PI / 180.0);
-                }
+                var eccentricity = eccentricities[i];
+                var eccentricAnomaly = eccentricAnomalies[i];
 
                 var trueAnomaly = 2.0 * NumpyModulo(
                     Math.Atan2(Math.Sqrt((1.0 + eccentricity) / (1.0 - eccentricity))

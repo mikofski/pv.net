@@ -104,6 +104,28 @@ def main():
         101325,
         12,
     )
+    add_case(
+        "multi_season_utc",
+        pd.DatetimeIndex(
+            [f"2019-{month:02d}-01 12:00:00" for month in range(1, 13)],
+            tz="UTC",
+        ),
+        0,
+        0,
+        101325,
+        12,
+    )
+    add_case(
+        "fractional_seconds_utc",
+        pd.DatetimeIndex(
+            ["2019-03-20 05:30:00.500000", "2019-03-20 12:00:00.500000"],
+            tz="UTC",
+        ),
+        0,
+        0,
+        101325,
+        12,
+    )
 
     array_times = pd.date_range(
         "2019-03-20 05:30", periods=4, freq="2h", tz="UTC"
