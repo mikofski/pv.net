@@ -475,5 +475,308 @@ namespace pv
 
             return hours;
         }
+
+        /// <summary>
+        /// Calculates solar position with a native ephemeris calculator ported from
+        /// pvlib.solarposition.ephemeris. Accuracy is not guaranteed; the method is based
+        /// on informal class materials by Grover Hughes at Sandia National Laboratories (1985)
+        /// and is not reliable for dates far from the present.
+        /// </summary>
+        /// <param name="location">site coordinates and fixed UTC offset [n/d] (Location)</param>
+        /// <param name="times">timestamps using the location UTC offset [n/d] (array of DateTimeOffset)</param>
+        /// <param name="pressure">ambient pressure [Pa] (double, default: 101325.0)</param>
+        /// <param name="temperature">ambient temperature [degrees C] (double, default: 12.0)</param>
+        /// <returns>SolarPositionResult: ApparentElevation, Elevation, Azimuth, ApparentZenith, and Zenith [degrees] (array of double); SolarTime [hours] (array of double); EquationOfTime [minutes] (array of double), null. Result type [n/d] (SolarPositionResult).</returns>
+        /// <exception cref="ArgumentNullException">location or times is null.</exception>
+        /// <exception cref="ArgumentException">A timestamp offset differs from the location offset.</exception>
+        public static SolarPositionResult Ephemeris(
+            Location location,
+            DateTimeOffset[] times,
+            double pressure = 101325.0,
+            double temperature = 12.0) =>
+            EphemerisCore(location, times, pressure, Array.Empty<double>(), false,
+                temperature, Array.Empty<double>(), false);
+
+        /// <summary>
+        /// Calculates solar position with a native ephemeris calculator ported from
+        /// pvlib.solarposition.ephemeris. Accuracy is not guaranteed; the method is based
+        /// on informal class materials by Grover Hughes at Sandia National Laboratories (1985)
+        /// and is not reliable for dates far from the present.
+        /// </summary>
+        /// <param name="location">site coordinates and fixed UTC offset [n/d] (Location)</param>
+        /// <param name="times">timestamps using the location UTC offset [n/d] (array of DateTimeOffset)</param>
+        /// <param name="pressure">ambient pressure [Pa] (array of double)</param>
+        /// <param name="temperature">ambient temperature [degrees C] (double, default: 12.0)</param>
+        /// <returns>SolarPositionResult: ApparentElevation, Elevation, Azimuth, ApparentZenith, and Zenith [degrees] (array of double); SolarTime [hours] (array of double); EquationOfTime [minutes] (array of double), null. Result type [n/d] (SolarPositionResult).</returns>
+        /// <exception cref="ArgumentNullException">location, times, or pressure is null.</exception>
+        /// <exception cref="ArgumentException">A timestamp offset differs from the location offset, or pressure does not have one value per timestamp.</exception>
+        public static SolarPositionResult Ephemeris(
+            Location location,
+            DateTimeOffset[] times,
+            double[] pressure,
+            double temperature = 12.0)
+        {
+            ArgumentNullException.ThrowIfNull(pressure);
+            return EphemerisCore(location, times, 0.0, pressure, true,
+                temperature, Array.Empty<double>(), false);
+        }
+
+        /// <summary>
+        /// Calculates solar position with a native ephemeris calculator ported from
+        /// pvlib.solarposition.ephemeris. Accuracy is not guaranteed; the method is based
+        /// on informal class materials by Grover Hughes at Sandia National Laboratories (1985)
+        /// and is not reliable for dates far from the present.
+        /// </summary>
+        /// <param name="location">site coordinates and fixed UTC offset [n/d] (Location)</param>
+        /// <param name="times">timestamps using the location UTC offset [n/d] (array of DateTimeOffset)</param>
+        /// <param name="pressure">ambient pressure [Pa] (double)</param>
+        /// <param name="temperature">ambient temperature [degrees C] (array of double)</param>
+        /// <returns>SolarPositionResult: ApparentElevation, Elevation, Azimuth, ApparentZenith, and Zenith [degrees] (array of double); SolarTime [hours] (array of double); EquationOfTime [minutes] (array of double), null. Result type [n/d] (SolarPositionResult).</returns>
+        /// <exception cref="ArgumentNullException">location, times, or temperature is null.</exception>
+        /// <exception cref="ArgumentException">A timestamp offset differs from the location offset, or temperature does not have one value per timestamp.</exception>
+        public static SolarPositionResult Ephemeris(
+            Location location,
+            DateTimeOffset[] times,
+            double pressure,
+            double[] temperature)
+        {
+            ArgumentNullException.ThrowIfNull(temperature);
+            return EphemerisCore(location, times, pressure, Array.Empty<double>(), false,
+                0.0, temperature, true);
+        }
+
+        /// <summary>
+        /// Calculates solar position with a native ephemeris calculator ported from
+        /// pvlib.solarposition.ephemeris. Accuracy is not guaranteed; the method is based
+        /// on informal class materials by Grover Hughes at Sandia National Laboratories (1985)
+        /// and is not reliable for dates far from the present.
+        /// </summary>
+        /// <param name="location">site coordinates and fixed UTC offset [n/d] (Location)</param>
+        /// <param name="times">timestamps using the location UTC offset [n/d] (array of DateTimeOffset)</param>
+        /// <param name="pressure">ambient pressure [Pa] (array of double)</param>
+        /// <param name="temperature">ambient temperature [degrees C] (array of double)</param>
+        /// <returns>SolarPositionResult: ApparentElevation, Elevation, Azimuth, ApparentZenith, and Zenith [degrees] (array of double); SolarTime [hours] (array of double); EquationOfTime [minutes] (array of double), null. Result type [n/d] (SolarPositionResult).</returns>
+        /// <exception cref="ArgumentNullException">location, times, pressure, or temperature is null.</exception>
+        /// <exception cref="ArgumentException">A timestamp offset differs from the location offset, or a parameter array does not have one value per timestamp.</exception>
+        public static SolarPositionResult Ephemeris(
+            Location location,
+            DateTimeOffset[] times,
+            double[] pressure,
+            double[] temperature)
+        {
+            ArgumentNullException.ThrowIfNull(pressure);
+            ArgumentNullException.ThrowIfNull(temperature);
+            return EphemerisCore(location, times, 0.0, pressure, true,
+                0.0, temperature, true);
+        }
+
+        /// <summary>
+        /// Ports pvlib.solarposition.ephemeris using UTC instants and aligned optional
+        /// pressure and temperature arrays.
+        /// </summary>
+        /// <param name="location">site coordinates and fixed UTC offset [n/d] (Location)</param>
+        /// <param name="times">timestamps using the location UTC offset [n/d] (array of DateTimeOffset)</param>
+        /// <param name="pressure">ambient pressure [Pa] (double)</param>
+        /// <param name="pressureArray">ambient pressure [Pa] (array of double)</param>
+        /// <param name="hasPressureArray">whether pressureArray supplies per-timestamp values [n/d] (bool)</param>
+        /// <param name="temperature">ambient temperature [degrees C] (double)</param>
+        /// <param name="temperatureArray">ambient temperature [degrees C] (array of double)</param>
+        /// <param name="hasTemperatureArray">whether temperatureArray supplies per-timestamp values [n/d] (bool)</param>
+        /// <returns>Solar position result: ApparentElevation, Elevation, Azimuth, ApparentZenith, and Zenith [degrees]; SolarTime [hours]; EquationOfTime is null.</returns>
+        /// <exception cref="ArgumentNullException">location, times, or a supplied parameter array is null.</exception>
+        /// <exception cref="ArgumentException">A timestamp offset differs from the location offset, or a supplied parameter array does not have one value per timestamp.</exception>
+        private static SolarPositionResult EphemerisCore(
+            Location location,
+            DateTimeOffset[] times,
+            double pressure,
+            double[] pressureArray,
+            bool hasPressureArray,
+            double temperature,
+            double[] temperatureArray,
+            bool hasTemperatureArray)
+        {
+            ArgumentNullException.ThrowIfNull(location);
+            ArgumentNullException.ThrowIfNull(times);
+            for (var i = 0; i < times.Length; i++)
+            {
+                if (times[i].Offset != location.UtcOffset)
+                {
+                    throw new ArgumentException(
+                        "Every timestamp must use the UTC offset specified by location.",
+                        nameof(times));
+                }
+            }
+
+            if (hasPressureArray && pressureArray.Length != times.Length)
+            {
+                throw new ArgumentException("pressure must have one value per timestamp.", nameof(pressureArray));
+            }
+
+            if (hasTemperatureArray && temperatureArray.Length != times.Length)
+            {
+                throw new ArgumentException("temperature must have one value per timestamp.", nameof(temperatureArray));
+            }
+
+            var apparentElevation = new double[times.Length];
+            var elevation = new double[times.Length];
+            var azimuth = new double[times.Length];
+            var apparentZenith = new double[times.Length];
+            var zenith = new double[times.Length];
+            var solarTime = new double[times.Length];
+            var latitudeRadians = location.Latitude * Math.PI / 180.0;
+            var longitudeForAlgorithm = -location.Longitude;
+            const double aberration = 20.0 / 3600.0;
+            var meanAnomalies = new double[times.Length];
+            var eccentricities = new double[times.Length];
+            var eccentricAnomalies = new double[times.Length];
+
+            for (var i = 0; i < times.Length; i++)
+            {
+                var utc = times[i].UtcDateTime;
+                var decimalHour = utc.Hour + utc.Minute / 60.0 + utc.Second / 3600.0
+                    + (utc.Ticks % TimeSpan.TicksPerSecond) / (double)TimeSpan.TicksPerHour;
+                var yearFrom1900 = utc.Year - 1900.0;
+                var yearBegin = 365.0 * yearFrom1900
+                    + Math.Floor((yearFrom1900 - 1.0) / 4.0) - 0.5;
+                var zeroDate = yearBegin + utc.DayOfYear;
+                var epochDate = zeroDate + decimalHour / 24.0;
+                var t1 = epochDate / 36525.0;
+                meanAnomalies[i] = NumpyModulo(358.47583 + 0.985600267 * epochDate
+                    - 0.00015 * t1 * t1 - 3.0e-6 * t1 * t1 * t1, 360.0);
+                eccentricities[i] = 0.01675104 - 4.18e-5 * t1 - 1.26e-7 * t1 * t1;
+                eccentricAnomalies[i] = meanAnomalies[i];
+            }
+
+            var previousEccentricAnomalies = new double[times.Length];
+            while (true)
+            {
+                var needsIteration = false;
+                for (var i = 0; i < times.Length; i++)
+                {
+                    if (Math.Abs(eccentricAnomalies[i] - previousEccentricAnomalies[i]) > 0.0001)
+                    {
+                        needsIteration = true;
+                        break;
+                    }
+                }
+
+                if (!needsIteration)
+                {
+                    break;
+                }
+
+                for (var i = 0; i < times.Length; i++)
+                {
+                    previousEccentricAnomalies[i] = eccentricAnomalies[i];
+                    eccentricAnomalies[i] = meanAnomalies[i]
+                        + eccentricities[i] * 180.0 / Math.PI
+                        * Math.Sin(eccentricAnomalies[i] * Math.PI / 180.0);
+                }
+            }
+
+            for (var i = 0; i < times.Length; i++)
+            {
+                var utc = times[i].UtcDateTime;
+                var year = utc.Year;
+                var dayOfYear = utc.DayOfYear;
+                var decimalHour = utc.Hour + utc.Minute / 60.0 + utc.Second / 3600.0
+                    + (utc.Ticks % TimeSpan.TicksPerSecond) / (double)TimeSpan.TicksPerHour;
+                var yearFrom1900 = year - 1900.0;
+                var yearBegin = 365.0 * yearFrom1900 + Math.Floor((yearFrom1900 - 1.0) / 4.0) - 0.5;
+                var zeroDate = yearBegin + dayOfYear;
+                var t = zeroDate / 36525.0;
+
+                var gmst0 = 6.0 / 24.0 + 38.0 / 1440.0
+                    + (45.836 + 8640184.542 * t + 0.0929 * t * t) / 86400.0;
+                gmst0 = 360.0 * (gmst0 - Math.Floor(gmst0));
+                var gmst = NumpyModulo(gmst0 + 360.0 * (1.0027379093 * decimalHour / 24.0), 360.0);
+                var localApparentSiderealTime = NumpyModulo(360.0 + gmst - longitudeForAlgorithm, 360.0);
+
+                var epochDate = zeroDate + decimalHour / 24.0;
+                var t1 = epochDate / 36525.0;
+                var obliquity = (23.452294 - 0.0130125 * t1 - 1.64e-6 * t1 * t1
+                    + 5.03e-7 * t1 * t1 * t1) * Math.PI / 180.0;
+                var meanLongitudePerigee = 281.22083 + 4.70684e-5 * epochDate
+                    + 0.000453 * t1 * t1 + 3.0e-6 * t1 * t1 * t1;
+                var eccentricity = eccentricities[i];
+                var eccentricAnomaly = eccentricAnomalies[i];
+
+                var trueAnomaly = 2.0 * NumpyModulo(
+                    Math.Atan2(Math.Sqrt((1.0 + eccentricity) / (1.0 - eccentricity))
+                        * Math.Tan(eccentricAnomaly * Math.PI / 360.0), 1.0) * 180.0 / Math.PI,
+                    360.0);
+                var eclipticLongitude = NumpyModulo(meanLongitudePerigee + trueAnomaly, 360.0) - aberration;
+                var eclipticLongitudeRadians = eclipticLongitude * Math.PI / 180.0;
+                var declinationRadians = Math.Asin(Math.Sin(obliquity) * Math.Sin(eclipticLongitudeRadians));
+                var rightAscension = Math.Atan2(
+                    Math.Cos(obliquity) * Math.Sin(eclipticLongitudeRadians),
+                    Math.Cos(eclipticLongitudeRadians)) * 180.0 / Math.PI;
+                var hourAngle = localApparentSiderealTime - rightAscension;
+                var hourAngleRadians = hourAngle * Math.PI / 180.0;
+                hourAngle -= 360.0 * (Math.Abs(hourAngle) > 180.0 ? 1.0 : 0.0);
+
+                var sunAzimuth = Math.Atan2(
+                    -Math.Sin(hourAngleRadians),
+                    Math.Cos(latitudeRadians) * Math.Tan(declinationRadians)
+                    - Math.Sin(latitudeRadians) * Math.Cos(hourAngleRadians)) * 180.0 / Math.PI;
+                if (sunAzimuth < 0.0)
+                {
+                    sunAzimuth += 360.0;
+                }
+
+                var sunElevation = Math.Asin(
+                    Math.Cos(latitudeRadians) * Math.Cos(declinationRadians) * Math.Cos(hourAngleRadians)
+                    + Math.Sin(latitudeRadians) * Math.Sin(declinationRadians)) * 180.0 / Math.PI;
+                var tangentElevation = Math.Tan(sunElevation * Math.PI / 180.0);
+                var refraction = 0.0;
+                if (sunElevation > 5.0 && sunElevation <= 85.0)
+                {
+                    refraction = 58.1 / tangentElevation - 0.07 / Math.Pow(tangentElevation, 3.0)
+                        + 8.6e-5 / Math.Pow(tangentElevation, 5.0);
+                }
+                else if (sunElevation > -0.575 && sunElevation <= 5.0)
+                {
+                    refraction = sunElevation * (-518.2 + sunElevation
+                        * (103.4 + sunElevation * (-12.79 + sunElevation * 0.711))) + 1735.0;
+                }
+                else if (sunElevation > -1.0 && sunElevation <= -0.575)
+                {
+                    refraction = -20.774 / tangentElevation;
+                }
+
+                var localPressure = hasPressureArray ? pressureArray[i] : pressure;
+                var localTemperature = hasTemperatureArray ? temperatureArray[i] : temperature;
+                refraction *= (283.0 / (273.0 + localTemperature))
+                    * (localPressure / 101325.0) / 3600.0;
+                var apparentSunElevation = sunElevation + refraction;
+
+                elevation[i] = sunElevation;
+                apparentElevation[i] = apparentSunElevation;
+                azimuth[i] = sunAzimuth;
+                zenith[i] = 90.0 - sunElevation;
+                apparentZenith[i] = 90.0 - apparentSunElevation;
+                solarTime[i] = (180.0 + hourAngle) / 15.0;
+            }
+
+            return new SolarPositionResult
+            {
+                Times = (DateTimeOffset[])times.Clone(),
+                ApparentElevation = apparentElevation,
+                Elevation = elevation,
+                Azimuth = azimuth,
+                ApparentZenith = apparentZenith,
+                Zenith = zenith,
+                SolarTime = solarTime
+            };
+        }
+
+        /// <summary>
+        /// Returns the remainder using NumPy's modulo convention.
+        /// </summary>
+        /// <param name="value">value to reduce [n/d] (double)</param>
+        /// <param name="modulus">positive modulus [n/d] (double)</param>
+        /// <returns>remainder in the range from zero up to the modulus [n/d] (double)</returns>
+        private static double NumpyModulo(double value, double modulus) =>
+            value - Math.Floor(value / modulus) * modulus;
     }
 }
