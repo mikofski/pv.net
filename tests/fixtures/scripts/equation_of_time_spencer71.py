@@ -14,7 +14,7 @@ def main():
         "cases": [
             {
                 "name": "equation_of_time_spencer71_2015",
-                "inputs": {"day_of_year": days_of_year},
+                "inputs": {"day_of_year": days_of_year.tolist()},
                 "expected": [float(value) for value in expected],
             }
         ],

@@ -10,6 +10,17 @@ namespace pv
         /// <summary>
         /// Port of pvlib.solarposition._calculate_simple_day_angle.
         /// </summary>
+        /// <param name="dayOfYear">day of year [days] (double)</param>
+        /// <param name="offset">day-angle offset [days] (int, default: 1)</param>
+        /// <returns>Earth orbital day angle [radians] (double)</returns>
+        public static double CalcSimpleDayAngleArray(double dayOfYear, int offset = 1)
+        {
+            return (2.0 * Math.PI / 365.0) * (dayOfYear - offset);
+        }
+
+        /// <summary>
+        /// Port of pvlib.solarposition._calculate_simple_day_angle.
+        /// </summary>
         /// <param name="dayOfYear">day of year [days] (array of double)</param>
         /// <param name="offset">day-angle offset [days] (int, default: 1)</param>
         /// <returns>Earth orbital day angle [radians] (array of double)</returns>
@@ -21,10 +32,26 @@ namespace pv
             var dayAngle = new double[dayOfYear.Length];
             for (var i = 0; i < dayOfYear.Length; i++)
             {
-                dayAngle[i] = (2.0 * Math.PI / 365.0) * (dayOfYear[i] - offset);
+                dayAngle[i] = CalcSimpleDayAngleArray(dayOfYear[i], offset);
             }
 
             return dayAngle;
+        }
+
+        /// <summary>
+        /// Port of pvlib.solarposition.equation_of_time_spencer71.
+        /// </summary>
+        /// <param name="dayOfYear">day of year [days] (double)</param>
+        /// <returns>equation of time [minutes] (double)</returns>
+        public static double EquationOfTimeSpencer71(double dayOfYear)
+        {
+            var dayAngle = CalcSimpleDayAngleArray(dayOfYear);
+            return (1440.0 / (2.0 * Math.PI)) * (
+                0.0000075
+                + 0.001868 * Math.Cos(dayAngle)
+                - 0.032077 * Math.Sin(dayAngle)
+                - 0.014615 * Math.Cos(2.0 * dayAngle)
+                - 0.040849 * Math.Sin(2.0 * dayAngle));
         }
 
         /// <summary>
@@ -35,19 +62,27 @@ namespace pv
         /// <exception cref="ArgumentNullException">dayOfYear is null.</exception>
         public static double[] EquationOfTimeSpencer71(double[] dayOfYear)
         {
-            var dayAngle = CalcSimpleDayAngleArray(dayOfYear);
-            var eot = new double[dayAngle.Length];
-            for (var i = 0; i < dayAngle.Length; i++)
+            ArgumentNullException.ThrowIfNull(dayOfYear);
+            var eot = new double[dayOfYear.Length];
+            for (var i = 0; i < dayOfYear.Length; i++)
             {
-                eot[i] = (1440.0 / (2.0 * Math.PI)) * (
-                    0.0000075
-                    + 0.001868 * Math.Cos(dayAngle[i])
-                    - 0.032077 * Math.Sin(dayAngle[i])
-                    - 0.014615 * Math.Cos(2.0 * dayAngle[i])
-                    - 0.040849 * Math.Sin(2.0 * dayAngle[i]));
+                eot[i] = EquationOfTimeSpencer71(dayOfYear[i]);
             }
 
             return eot;
+        }
+
+        /// <summary>
+        /// Port of pvlib.solarposition.equation_of_time_pvcdrom.
+        /// </summary>
+        /// <param name="dayOfYear">day of year [days] (double)</param>
+        /// <returns>equation of time [minutes] (double)</returns>
+        public static double EquationOfTimePvCdrom(double dayOfYear)
+        {
+            var dayAngle = CalcSimpleDayAngleArray(dayOfYear, offset: 81);
+            return 9.87 * Math.Sin(2.0 * dayAngle)
+                   - 7.53 * Math.Cos(dayAngle)
+                   - 1.5 * Math.Sin(dayAngle);
         }
 
         /// <summary>
@@ -58,16 +93,31 @@ namespace pv
         /// <exception cref="ArgumentNullException">dayOfYear is null.</exception>
         public static double[] EquationOfTimePvCdrom(double[] dayOfYear)
         {
-            var dayAngle = CalcSimpleDayAngleArray(dayOfYear, offset: 81);
-            var eot = new double[dayAngle.Length];
-            for (var i = 0; i < dayAngle.Length; i++)
+            ArgumentNullException.ThrowIfNull(dayOfYear);
+            var eot = new double[dayOfYear.Length];
+            for (var i = 0; i < dayOfYear.Length; i++)
             {
-                eot[i] = 9.87 * Math.Sin(2.0 * dayAngle[i])
-                         - 7.53 * Math.Cos(dayAngle[i])
-                         - 1.5 * Math.Sin(dayAngle[i]);
+                eot[i] = EquationOfTimePvCdrom(dayOfYear[i]);
             }
 
             return eot;
+        }
+
+        /// <summary>
+        /// Port of pvlib.solarposition.declination_spencer71.
+        /// </summary>
+        /// <param name="dayOfYear">day of year [days] (double)</param>
+        /// <returns>solar declination [radians] (double)</returns>
+        public static double DeclinationSpencer71(double dayOfYear)
+        {
+            var angle = CalcSimpleDayAngleArray(dayOfYear);
+            return 0.006918
+                - 0.399912 * Math.Cos(angle)
+                + 0.070257 * Math.Sin(angle)
+                - 0.006758 * Math.Cos(2.0 * angle)
+                + 0.000907 * Math.Sin(2.0 * angle)
+                - 0.002697 * Math.Cos(3.0 * angle)
+                + 0.00148 * Math.Sin(3.0 * angle);
         }
 
         /// <summary>
@@ -78,21 +128,25 @@ namespace pv
         /// <exception cref="ArgumentNullException">dayOfYear is null.</exception>
         public static double[] DeclinationSpencer71(double[] dayOfYear)
         {
-            var dayAngle = CalcSimpleDayAngleArray(dayOfYear);
-            var declination = new double[dayAngle.Length];
-            for (var i = 0; i < dayAngle.Length; i++)
+            ArgumentNullException.ThrowIfNull(dayOfYear);
+            var declination = new double[dayOfYear.Length];
+            for (var i = 0; i < dayOfYear.Length; i++)
             {
-                var angle = dayAngle[i];
-                declination[i] = 0.006918
-                    - 0.399912 * Math.Cos(angle)
-                    + 0.070257 * Math.Sin(angle)
-                    - 0.006758 * Math.Cos(2.0 * angle)
-                    + 0.000907 * Math.Sin(2.0 * angle)
-                    - 0.002697 * Math.Cos(3.0 * angle)
-                    + 0.00148 * Math.Sin(3.0 * angle);
+                declination[i] = DeclinationSpencer71(dayOfYear[i]);
             }
 
             return declination;
+        }
+
+        /// <summary>
+        /// Port of pvlib.solarposition.declination_cooper69.
+        /// </summary>
+        /// <param name="dayOfYear">day of year [days] (double)</param>
+        /// <returns>solar declination [radians] (double)</returns>
+        public static double DeclinationCooper69(double dayOfYear)
+        {
+            var dayAngle = CalcSimpleDayAngleArray(dayOfYear, offset: -284);
+            return Math.PI / 180.0 * 23.45 * Math.Sin(dayAngle);
         }
 
         /// <summary>
@@ -103,15 +157,38 @@ namespace pv
         /// <exception cref="ArgumentNullException">dayOfYear is null.</exception>
         public static double[] DeclinationCooper69(double[] dayOfYear)
         {
-            var dayAngle = CalcSimpleDayAngleArray(dayOfYear, offset: -284);
-
-            var declination = new double[dayAngle.Length];
-            for (var i = 0; i < dayAngle.Length; i++)
+            ArgumentNullException.ThrowIfNull(dayOfYear);
+            var declination = new double[dayOfYear.Length];
+            for (var i = 0; i < dayOfYear.Length; i++)
             {
-                declination[i] = Math.PI / 180.0 * 23.45 * Math.Sin(dayAngle[i]);
+                declination[i] = DeclinationCooper69(dayOfYear[i]);
             }
 
             return declination;
+        }
+
+        /// <summary>
+        /// Port of pvlib.solarposition.hour_angle.
+        /// </summary>
+        /// <param name="location">site coordinates and fixed UTC offset [n/d] (Location)</param>
+        /// <param name="time">timezone-aware timestamp [n/d] (DateTimeOffset)</param>
+        /// <param name="equationOfTime">equation of time [minutes] (double)</param>
+        /// <returns>solar hour angle [degrees] (double)</returns>
+        /// <exception cref="ArgumentNullException">location is null.</exception>
+        /// <exception cref="ArgumentException">The timestamp offset differs from the location offset.</exception>
+        public static double HourAngle(Location location, DateTimeOffset time, double equationOfTime)
+        {
+            ArgumentNullException.ThrowIfNull(location);
+            if (time.Offset != location.UtcOffset)
+            {
+                throw new ArgumentException(
+                    "The timestamp must use the UTC offset specified by location.",
+                    nameof(time));
+            }
+
+            return 15.0 * (time.TimeOfDay.TotalHours - location.UtcOffset.TotalHours - 12.0)
+                + location.Longitude
+                + equationOfTime / 4.0;
         }
 
         /// <summary>
@@ -146,12 +223,7 @@ namespace pv
                         nameof(times));
                 }
 
-                hourAngle[i] = 15.0 * (
-                    times[i].TimeOfDay.TotalHours
-                    - location.UtcOffset.TotalHours
-                    - 12.0)
-                    + location.Longitude
-                    + equationOfTime[i] / 4.0;
+                hourAngle[i] = HourAngle(location, times[i], equationOfTime[i]);
             }
 
             return hourAngle;
