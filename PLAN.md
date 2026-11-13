@@ -28,7 +28,7 @@ is either in the backlog in section 7 or explicitly out of scope in section 2.
 - [ ] `sun_rise_set_transit_spa` → backlog **F6** (#11)
 - [ ] `sun_rise_set_transit_ephem` → out of scope
 - [ ] `pyephem` → out of scope
-- [ ] `ephemeris` → backlog **F3** (#8)
+- [x] `ephemeris` → `SolarPosition.Ephemeris`
 - [ ] `calc_time` → out of scope
 - [ ] `pyephem_earthsun_distance` → out of scope
 - [ ] `nrel_earthsun_distance` → backlog **F5** (#10)
@@ -328,7 +328,7 @@ numbers.
 | A1 | [#7](https://github.com/mikofski/pv.net/issues/7) | `Atmosphere`: `pres2alt` and `alt2pres` (needed by `get_solarposition`) | P0 | [x] |
 | F1 | [#6](https://github.com/mikofski/pv.net/issues/6) | `solar_azimuth_analytical` | P0 | [x] |
 | F2 | [#5](https://github.com/mikofski/pv.net/issues/5) | `sun_rise_set_transit_geometric` and its three private helpers | P1 | [x] |
-| F3 | [#8](https://github.com/mikofski/pv.net/issues/8) | `ephemeris` | P1 | [ ] |
+| F3 | [#8](https://github.com/mikofski/pv.net/issues/8) | `ephemeris` | P1 | [x] |
 | F4 | [#9](https://github.com/mikofski/pv.net/issues/9) | Public `spa` (`SolarPosition.Spa`, port of `spa_python`) and `_datetime_to_unixtime` | S2, P1 | [ ] |
 | F5 | [#10](https://github.com/mikofski/pv.net/issues/10) | `nrel_earthsun_distance` | S3 | [ ] |
 | F6 | [#11](https://github.com/mikofski/pv.net/issues/11) | `sun_rise_set_transit_spa` | S3, P1 | [ ] |
